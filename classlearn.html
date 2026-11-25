@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unit 11: Alcohols, Phenols & Ethers — Interactive Visual Lab</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            alabaster: '#F8F9FA',
+            sage: '#EDF2F0',
+            slateText: '#1E293B',
+            indigoAccent: '#4F46E5',
+            emeraldAccent: '#10B981',
+            amberAccent: '#F59E0B',
+            softLilac: '#E9D8FD',
+            softSky: '#E0F2FE',
+            warmPeach: '#FFEDD5',
+            softMint: '#D1FAE5',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Base Reset & Typography */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: linear-gradient(135deg, #F8F9FA 0%, #EDF2F0 100%);
+      color: #1E293B;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-size: 16px;
+    }
+
+    /* Ambient Hero 3D Canvas */
+    #ambient-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.65;
+    }
+
+    /* 3D Perspective & Flashcard Flip Mechanics */
+    .perspective-container {
+      perspective: 1400px;
+    }
+
+    .card-3d-inner {
+      position: relative;
+      width: 100%;
+      transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+      transform-style: preserve-3d;
+    }
+
+    .card-3d-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      width: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 1.5rem;
+      background: #FFFFFF;
+      box-shadow: 0 20px 40px -15px rgba(30, 41, 59, 0.08), 0 4px 12px -2px rgba(30, 41, 59, 0.04);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    .card-back {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: rotateY(180deg);
+    }
+
+    /* Spring Physics Hover Tilt for Deck Cards */
+    .deck-card {
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    .deck-card:hover {
+      box-shadow: 0 24px 44px -12px rgba(79, 70, 229, 0.14);
+    }
+
+    /* Smooth Card Transition Animations */
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(32px) scale(0.98); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-32px) scale(0.98); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    .anim-slide-right { animation: slideInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .anim-slide-left { animation: slideInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+
+    /* Molecule 3D Sandbox Container */
+    #molecule-3d-viewport {
+      width: 100%;
+      height: 290px;
+      border-radius: 1rem;
+      background: radial-gradient(circle at center, #F8FAFC 0%, #E2E8F0 100%);
+      cursor: grab;
+      touch-action: none;
+      position: relative;
+      overflow: hidden;
+    }
+    #molecule-3d-viewport:active {
+      cursor: grabbing;
+    }
+
+    /* Chemistry Subscript formatting */
+    .chem sub, sub {
+      font-size: 0.72em;
+      line-height: 0;
+      position: relative;
+      vertical-align: baseline;
+      bottom: -0.22em;
+    }
+    .chem sup, sup {
+      font-size: 0.72em;
+      line-height: 0;
+      position: relative;
+      vertical-align: baseline;
+      top: -0.45em;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- Ambient 3D Floating Molecules Background -->
+  <canvas id="ambient-canvas"></canvas>
+
+  <!-- Toast Notification Banner (No alert() ever) -->
+  <div id="toast-banner" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform translate-y-4">
+    <div id="toast-message" class="bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2.5">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+      <span>Saved!</span>
+    </div>
+  </div>
+
+  <!-- Main App Wrapper -->
+  <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- Top Navigation Bar -->
+    <header class="flex flex-wrap items-center justify-between gap-4 mb-8 bg-white/85 backdrop-blur-md px-5 py-4 rounded-3xl border border-slate-200/80 shadow-sm">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+        <div class="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
+          <!-- Benzene + OH Hexagon Icon -->
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 3 19.8 7.5 19.8 16.5 12 21 4.2 16.5 4.2 7.5 12 3"></polygon>
+            <circle cx="12" cy="12" r="3.5"></circle>
+            <line x1="12" y1="3" x2="12" y2="1"></line>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-softLilac text-purple-900">Unit 11</span>
+            <span class="text-xs font-mono text-slate-500 hidden sm:inline">NCERT Class XII</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Alcohols, Phenols & Ethers</h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <button onclick="openNotesModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-sm shadow-sm shadow-indigo-200 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          <span>Drop Your Own Notes</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- =====================================================================
+         VIEW 1: CLEAN STUDY HUB (LANDING SCREEN — PROGRESSIVE DISCLOSURE)
+         ===================================================================== -->
+    <main id="view-hub" class="transition-opacity duration-300">
+      <!-- Sleek Hero Banner & Overall Mastery Progress -->
+      <section class="bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="max-w-xl">
+            <p class="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-1.5">Interactive Visual Chemistry Lab</p>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight mb-2">
+              Master Organic Mechanisms Without Overload.
+            </h2>
+            <p class="text-slate-600 text-base leading-relaxed">
+              Choose a focused study deck below. Flip bite-sized concept cards, rotate 3D molecules, and run interactive synthesis sandboxes.
+            </p>
+          </div>
+
+          <!-- Mastery Progress Card -->
+          <div class="bg-sage/80 border border-emerald-200/70 rounded-2xl p-5 min-w-[240px] sm:min-w-[270px]">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-bold text-slate-800">Chapter Mastery</span>
+              <span id="overall-mastery-pct" class="text-sm font-mono font-bold text-emerald-700 bg-white px-2.5 py-0.5 rounded-full shadow-xs">0%</span>
+            </div>
+            <div class="w-full h-3 bg-white rounded-full overflow-hidden p-0.5 border border-emerald-100 mb-2">
+              <div id="overall-mastery-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-600">
+              <span id="overall-mastery-count">0 of 0 cards mastered</span>
+              <button onclick="resetProgress()" class="text-slate-500 hover:text-rose-600 underline font-medium transition">Reset</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 Distinct Topic Decks Grid (+ Custom Deck if added) -->
+      <div class="flex items-center justify-between mb-4 px-1">
+        <h3 class="text-base font-bold text-slate-800">Select a Study Deck</h3>
+        <span class="text-xs font-medium text-slate-500">Tap a deck to enter focused study mode</span>
+      </div>
+
+      <section id="decks-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+        <!-- Populated dynamically via JS -->
+      </section>
+    </main>
+
+    <!-- =====================================================================
+         VIEW 2: ACTIVE DECK & INTERACTIVE LAB MODE
+         ===================================================================== -->
+    <main id="view-deck" class="hidden">
+      <!-- Deck Top Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5 bg-white/90 backdrop-blur-md px-4 py-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
+        <button onclick="goHome()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm transition active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          <span>All Decks</span>
+        </button>
+
+        <div class="text-center">
+          <span id="active-deck-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-softLilac text-purple-900">Deck</span>
+          <h2 id="active-deck-title" class="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">Deck Title</h2>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span id="card-counter" class="font-mono text-sm font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl">1 / 5</span>
+        </div>
+      </div>
+
+      <!-- Segmented Tab Switcher (Flashcard vs Interactive Sandbox if available) -->
+      <div id="mode-tabs-wrapper" class="hidden justify-center mb-5">
+        <div class="inline-flex p-1.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+          <button id="tab-btn-card" onclick="switchCardMode('card')" class="px-4 py-2 rounded-xl text-sm font-bold transition bg-indigo-600 text-white shadow-xs">
+            Flashcard View
+          </button>
+          <button id="tab-btn-sandbox" onclick="switchCardMode('sandbox')" class="px-4 py-2 rounded-xl text-sm font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span id="tab-sandbox-label">Interactive Lab Sandbox</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mode A: 3D Flip Flashcard Container -->
+      <div id="flashcard-stage" class="perspective-container max-w-3xl mx-auto mb-6">
+        <div id="flashcard-inner" class="card-3d-inner">
+          <!-- FRONT FACE -->
+          <div id="card-front" class="card-face p-6 sm:p-9 flex flex-col justify-between min-h-[380px] sm:min-h-[420px]">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-5">
+                <span id="front-tag" class="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-softSky text-sky-900">Concept</span>
+                <span id="front-mastered-pill" class="hidden text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 items-center gap-1">
+                  ✓ Mastered
+                </span>
+              </div>
+
+              <h3 id="front-question" class="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug mb-5">
+                Question goes here
+              </h3>
+
+              <!-- Optional Visual SVG / Formula Diagram on Front -->
+              <div id="front-visual" class="my-4"></div>
+            </div>
+
+            <div class="pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <span class="text-xs text-slate-400 font-medium">Tap card or press <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-600 font-mono">Space</kbd> to flip</span>
+              <button onclick="flipCard()" class="px-5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-sm transition flex items-center gap-2">
+                <span>Flip to Answer</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- BACK FACE -->
+          <div id="card-back" class="card-face card-back p-6 sm:p-9 flex flex-col justify-between min-h-[380px] sm:min-h-[420px] bg-gradient-to-b from-white to-slate-50/70">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-warmPeach text-amber-900">Explanation & Mechanism</span>
+                <button onclick="flipCard()" class="text-xs font-bold text-indigo-600 hover:underline">Show Front ↺</button>
+              </div>
+
+              <div id="back-answer" class="text-slate-800 text-base leading-relaxed space-y-3">
+                <!-- Rich answer content -->
+              </div>
+
+              <!-- Optional Memory Hook / Exam Tip -->
+              <div id="back-tip-box" class="mt-5 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-100 text-sm text-indigo-950">
+                <span class="font-bold text-indigo-700 block mb-0.5">⚡ Quick Memory Hook:</span>
+                <span id="back-tip-text"></span>
+              </div>
+            </div>
+
+            <div class="pt-5 mt-5 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
+              <button id="open-sandbox-from-back" onclick="switchCardMode('sandbox')" class="hidden px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-sm transition items-center gap-1.5">
+                <span>🧪 Launch Interactive Experiment</span>
+              </button>
+              <button onclick="flipCard()" class="ml-auto px-4 py-2 rounded-xl bg-slate-200/70 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">
+                Flip Back
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode B: Interactive Lab Sandbox Stage -->
+      <div id="sandbox-stage" class="hidden max-w-3xl mx-auto mb-6">
+        <div class="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-lg">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-100">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">Interactive Lab Sandbox</span>
+              <h3 id="sandbox-title" class="text-xl font-extrabold text-slate-900 mt-1">Sandbox Title</h3>
+            </div>
+            <button onclick="switchCardMode('card')" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold transition">
+              ← Back to Flashcard
+            </button>
+          </div>
+          <div id="sandbox-content">
+            <!-- Dynamically rendered interactive experiment -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Spaced-Repetition & Navigation Controls -->
+      <div class="max-w-3xl mx-auto flex flex-wrap items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <button onclick="prevCard()" class="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold text-sm flex items-center gap-1.5 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          <span>Prev</span>
+        </button>
+
+        <div class="flex items-center gap-2.5">
+          <button id="btn-review-again" onclick="setMastery(false)" class="px-4 py-3 rounded-xl border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-900 font-bold text-sm transition">
+            ↻ Review Again
+          </button>
+          <button id="btn-mark-mastered" onclick="setMastery(true)" class="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm shadow-sm shadow-emerald-200 transition flex items-center gap-1.5">
+            <span>✓ Mastered</span>
+          </button>
+        </div>
+
+        <button onclick="nextCard()" class="px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-sm flex items-center gap-1.5 shadow-sm shadow-indigo-200 transition">
+          <span>Next</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- Keyboard Shortcuts Helper Bar -->
+      <div class="max-w-3xl mx-auto mt-3 text-center text-xs text-slate-500 hidden sm:block">
+        Shortcuts: <kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded font-mono">Space</kbd> Flip &bull;
+        <kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded font-mono">←</kbd> / <kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded font-mono">→</kbd> Navigate &bull;
+        <kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded font-mono">M</kbd> Toggle Mastered
+      </div>
+    </main>
+  </div>
+
+  <!-- =====================================================================
+       MODAL: DROP YOUR OWN NOTES (AUTO-PARSE INTO FLASHCARDS)
+       ===================================================================== -->
+  <div id="notes-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-[slideInRight_0.25s_ease-out]">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-softLilac text-purple-900">Instant Card Generator</span>
+          <h3 class="text-xl font-extrabold text-slate-900 mt-1">Drop Your Own PDF / Lecture Notes</h3>
+        </div>
+        <button onclick="closeNotesModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold">✕</button>
+      </div>
+
+      <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+        Paste raw notes below. Use <code class="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-indigo-700">Q: ... A: ...</code>, <code class="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-indigo-700">Term - Definition</code>, or separate paragraphs—we will automatically turn them into interactive flashcards!
+      </p>
+
+      <div class="mb-4">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Target Deck</label>
+        <select id="custom-target-deck" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="custom">✨ My Custom Notes Deck (New / Personal)</option>
+          <option value="deck1">Deck 1: Classification & IUPAC Nomenclature</option>
+          <option value="deck2">Deck 2: Structure & Physical Properties</option>
+          <option value="deck3">Deck 3: Preparation Lab</option>
+          <option value="deck4">Deck 4: Acidity & Chemical Reactions</option>
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Paste Notes Here</label>
+          <button onclick="fillSampleNotes()" class="text-xs font-bold text-indigo-600 hover:underline">Insert Sample Unit 11 Notes</button>
+        </div>
+        <textarea id="custom-notes-input" rows="6" placeholder="Example:&#10;Lucas Reagent - Mixture of conc. HCl and anhydrous ZnCl2 used to distinguish 1°, 2°, and 3° alcohols.&#10;Q: Why is phenol more acidic than ethanol?&#10;A: Phenoxide ion is resonance-stabilized across 5 structures, whereas ethoxide has localized negative charge." class="w-full rounded-2xl border border-slate-300 p-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans leading-relaxed"></textarea>
+      </div>
+
+      <div class="flex items-center justify-end gap-3">
+        <button onclick="closeNotesModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">Cancel</button>
+        <button onclick="generateCustomCards()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition">
+          ⚡ Generate Flashcards
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       APPLICATION DATA & LOGIC
+       ===================================================================== -->
+  <script>
+    /* -----------------------------------------------------------------------
+       1. SVG CHEMICAL STRUCTURE HELPERS (CRISP & ACCURATE)
+       ----------------------------------------------------------------------- */
+    const SVG_STRUCTURES = {
+      classification: `
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <svg viewBox="0 0 180 95" class="w-full h-20 mx-auto">
+              <text x="15" y="45" font-family="JetBrains Mono" font-size="13" fill="#1E293B">CH₂=CH–CH₂–</text>
+              <text x="115" y="45" font-family="JetBrains Mono" font-weight="bold" font-size="14" fill="#D946EF">OH</text>
+              <text x="48" y="72" font-family="Plus Jakarta Sans" font-size="11" fill="#4F46E5" font-weight="700">sp³ C next to C=C</text>
+            </svg>
+            <div class="text-xs font-extrabold text-slate-800">Allylic Alcohol (1°)</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <svg viewBox="0 0 180 95" class="w-full h-20 mx-auto">
+              <polygon points="45,22 65,33 65,55 45,66 25,55 25,33" fill="none" stroke="#1E293B" stroke-width="2"/>
+              <circle cx="45" cy="44" r="11" fill="none" stroke="#1E293B" stroke-width="1.5" stroke-dasharray="3,2"/>
+              <line x1="65" y1="33" x2="88" y2="25" stroke="#1E293B" stroke-width="2"/>
+              <text x="90" y="29" font-family="JetBrains Mono" font-size="13" fill="#1E293B">CH₂–</text>
+              <text x="123" y="29" font-family="JetBrains Mono" font-weight="bold" font-size="14" fill="#D946EF">OH</text>
+              <text x="45" y="84" font-family="Plus Jakarta Sans" font-size="11" fill="#0284C7" font-weight="700">sp³ C next to Ar ring</text>
+            </svg>
+            <div class="text-xs font-extrabold text-slate-800">Benzylic Alcohol (1°)</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <svg viewBox="0 0 180 95" class="w-full h-20 mx-auto">
+              <text x="28" y="45" font-family="JetBrains Mono" font-size="13" fill="#1E293B">CH₂=CH–</text>
+              <text x="95" y="45" font-family="JetBrains Mono" font-weight="bold" font-size="14" fill="#D946EF">OH</text>
+              <text x="42" y="72" font-family="Plus Jakarta Sans" font-size="11" fill="#D97706" font-weight="700">sp² vinylic carbon</text>
+            </svg>
+            <div class="text-xs font-extrabold text-slate-800">Vinylic Alcohol</div>
+          </div>
+        </div>
+      `,
+      phenols: `
+        <div class="grid grid-cols-3 gap-2.5 text-center">
+          <div class="p-2.5 rounded-2xl bg-purple-50/60 border border-purple-100">
+            <svg viewBox="0 0 120 100" class="w-full h-20 mx-auto">
+              <polygon points="60,25 82,38 82,64 60,77 38,64 38,38" fill="none" stroke="#1E293B" stroke-width="2"/>
+              <circle cx="60" cy="51" r="12" fill="none" stroke="#1E293B" stroke-width="1.5"/>
+              <line x1="60" y1="25" x2="60" y2="12" stroke="#1E293B" stroke-width="2"/>
+              <text x="52" y="11" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#D946EF">OH</text>
+              <line x1="82" y1="38" x2="95" y2="30" stroke="#1E293B" stroke-width="2"/>
+              <text x="96" y="32" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#D946EF">OH</text>
+            </svg>
+            <div class="text-xs font-extrabold text-slate-900">Catechol</div>
+            <div class="text-[11px] font-mono text-slate-500">Benzene-1,2-diol</div>
+          </div>
+          <div class="p-2.5 rounded-2xl bg-purple-50/60 border border-purple-100">
+            <svg viewBox="0 0 120 100" class="w-full h-20 mx-auto">
+              <polygon points="60,25 82,38 82,64 60,77 38,64 38,38" fill="none" stroke="#1E293B" stroke-width="2"/>
+              <circle cx="60" cy="51" r="12" fill="none" stroke="#1E293B" stroke-width="1.5"/>
+              <line x1="60" y1="25" x2="60" y2="12" stroke="#1E293B" stroke-width="2"/>
+              <text x="52" y="11" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#D946EF">OH</text>
+              <line x1="82" y1="64" x2="95" y2="72" stroke="#1E293B" stroke-width="2"/>
+              <text x="96" y="76" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#D946EF">OH</text>
+            </svg>
+            <div class="text-xs font-extrabold text-slate-900">Resorcinol</div>
+            <div class="text-[11px] font-mono text-slate-500">Benzene-1,3-diol</div>
+          </div>
+          <div class="p-2.5 rounded-2xl bg-purple-50/60 border border-purple-100">
+            <svg viewBox="0 0 120 100" class="w-full h-20 mx-auto">
+              <polygon points="60,22 82,35 82,61 60,74 38,61 38,35" fill="none" stroke="#1E293B" stroke-width="2"/>
+              <circle cx="60" cy="48" r="12" fill="none" stroke="#1E293B" stroke-width="1.5"/>
+              <line x1="60" y1="22" x2="60" y2="10" stroke="#1E293B" stroke-width="2"/>
+              <text x="52" y="10" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#D946EF">OH</text>
+              <line x1="60" y1="74" x2="60" y2="86" stroke="#1E293B" stroke-width="2"/>
+              <text x="52" y="96" font-family="JetBrains Mono" font-size="11" font-weight="bold" fill="#D946EF">OH</text>
+            </svg>
+            <div class="text-xs font-extrabold text-slate-900">Hydroquinone</div>
+            <div class="text-[11px] font-mono text-slate-500">Benzene-1,4-diol</div>
+          </div>
+        </div>
+      `,
+      bondAngles: `
+        <div class="grid grid-cols-3 gap-2.5 text-center bg-sky-50/70 p-3.5 rounded-2xl border border-sky-100">
+          <div>
+            <div class="font-mono text-lg font-extrabold text-indigo-700">108.9°</div>
+            <div class="text-xs font-bold text-slate-800">Methanol</div>
+            <div class="text-[11px] text-slate-500">C–O: 142 pm</div>
+          </div>
+          <div class="border-x border-sky-200/80">
+            <div class="font-mono text-lg font-extrabold text-purple-700">109°</div>
+            <div class="text-xs font-bold text-slate-800">Phenol</div>
+            <div class="text-[11px] text-slate-500">C–O: 136 pm</div>
+          </div>
+          <div>
+            <div class="font-mono text-lg font-extrabold text-amber-700">111.7°</div>
+            <div class="text-xs font-bold text-slate-800">Methoxymethane</div>
+            <div class="text-[11px] text-slate-500">C–O: 141 pm</div>
+          </div>
+        </div>
+      `,
+      resonance: `
+        <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 text-center">
+          <div class="text-xs font-bold text-amber-900 mb-1">Phenoxide Ion Resonance Stabilization (Structures I – V)</div>
+          <p class="text-xs text-slate-700">Negative charge delocalizes across <strong>ortho</strong> and <strong>para</strong> carbons of the benzene ring, with <em>no charge separation</em>—making phenoxide far more stable than phenol or alkoxide (R–O<sup>−</sup>).</p>
+        </div>
+      `
+    };
+
+    /* -----------------------------------------------------------------------
+       2. PRE-LOADED UNIT 11 CURRICULUM DECKS & CARDS
+       ----------------------------------------------------------------------- */
+    const DEFAULT_DECKS = [
+      {
+        id: 'deck1',
+        number: 'Deck 01',
+        title: 'Classification & IUPAC Nomenclature',
+        subtitle: '1°/2°/3°, Allylic, Benzylic, Vinylic, Cresols, Catechol & Ethers',
+        badgeBg: 'bg-softLilac',
+        badgeText: 'text-purple-900',
+        accentColor: '#7C3AED',
+        cards: [
+          {
+            id: 'd1-c1',
+            tag: 'Hybridisation Classification',
+            question: 'How do Allylic, Benzylic, and Vinylic alcohols differ in carbon hybridisation?',
+            visual: SVG_STRUCTURES.classification,
+            answer: `
+              <p><strong>1. Allylic Alcohols:</strong> The <span class="font-mono text-indigo-700 font-bold">-OH</span> group is attached to an <strong>sp<sup>3</sup>-hybridised carbon</strong> adjacent to a C=C double bond (<span class="font-mono">CH<sub>2</sub>=CH–CH<sub>2</sub>–OH</span>).</p>
+              <p><strong>2. Benzylic Alcohols:</strong> The <span class="font-mono text-indigo-700 font-bold">-OH</span> group is bonded to an <strong>sp<sup>3</sup>-hybridised carbon</strong> directly attached to an aromatic ring (<span class="font-mono">C<sub>6</sub>H<sub>5</sub>–CH<sub>2</sub>–OH</span>).</p>
+              <p><strong>3. Vinylic Alcohols:</strong> The <span class="font-mono text-indigo-700 font-bold">-OH</span> group is attached directly to an <strong>sp<sup>2</sup>-hybridised</strong> doubly-bonded carbon (<span class="font-mono">CH<sub>2</sub>=CH–OH</span>).</p>
+            `,
+            tip: 'Both Allylic and Benzylic alcohols can be 1°, 2°, or 3°, and their –OH carbon is always sp³!'
+          },
+          {
+            id: 'd1-c2',
+            tag: 'Alcohol IUPAC Rules',
+            question: 'What are the IUPAC names for Isopropyl alcohol, tert-Butyl alcohol, Ethylene glycol, and Glycerol?',
+            answer: `
+              <ul class="space-y-2 text-sm sm:text-base">
+                <li>• <strong>Isopropyl alcohol</strong> (<span class="font-mono">CH<sub>3</sub>–CH(OH)–CH<sub>3</sub></span>) → <strong>Propan-2-ol</strong></li>
+                <li>• <strong>tert-Butyl alcohol</strong> (<span class="font-mono">(CH<sub>3</sub>)<sub>3</sub>C–OH</span>) → <strong>2-Methylpropan-2-ol</strong></li>
+                <li>• <strong>Ethylene glycol</strong> (<span class="font-mono">HO–CH<sub>2</sub>–CH<sub>2</sub>–OH</span>) → <strong>Ethane-1,2-diol</strong></li>
+                <li>• <strong>Glycerol</strong> (<span class="font-mono">HOCH<sub>2</sub>–CH(OH)–CH<sub>2</sub>OH</span>) → <strong>Propane-1,2,3-triol</strong></li>
+              </ul>
+            `,
+            tip: 'For polyhydric alcohols (diol, triol), retain the ending "-e" of the parent alkane (e.g., Ethane-1,2-diol, NOT Ethandiol).'
+          },
+          {
+            id: 'd1-c3',
+            tag: 'Phenols Nomenclature',
+            question: 'Identify the structures and IUPAC names of Cresols and Benzenediols (Catechol, Resorcinol, Hydroquinone).',
+            visual: SVG_STRUCTURES.phenols,
+            answer: `
+              <p><strong>Cresols (Methylphenols):</strong></p>
+              <ul class="space-y-1 text-sm sm:text-base mb-2">
+                <li>• <em>o</em>-Cresol → <strong>2-Methylphenol</strong></li>
+                <li>• <em>m</em>-Cresol → <strong>3-Methylphenol</strong></li>
+                <li>• <em>p</em>-Cresol → <strong>4-Methylphenol</strong></li>
+              </ul>
+              <p><strong>Dihydroxybenzenes:</strong> 1,2-diol is <strong>Catechol</strong>, 1,3-diol is <strong>Resorcinol</strong>, and 1,4-diol is <strong>Hydroquinone (or Quinol)</strong>.</p>
+            `,
+            tip: 'Remember "C-R-H" in alphabetical order for 1,2-, 1,3-, and 1,4-benzenediol: Catechol (1,2), Resorcinol (1,3), Hydroquinone (1,4)!'
+          },
+          {
+            id: 'd1-c4',
+            tag: 'Ethers Classification & IUPAC',
+            question: 'How are Ethers classified and named in IUPAC (e.g., Anisole, Phenetole, Ethoxyethane)?',
+            answer: `
+              <p><strong>Classification:</strong> <em>Symmetrical (simple)</em> if both alkyl/aryl groups are identical (<span class="font-mono">C<sub>2</sub>H<sub>5</sub>OC<sub>2</sub>H<sub>5</sub></span>), or <em>Unsymmetrical (mixed)</em> if different (<span class="font-mono">C<sub>6</sub>H<sub>5</sub>OCH<sub>3</sub></span>).</p>
+              <p><strong>IUPAC Rule:</strong> Named as <strong>Alkoxyalkanes</strong> where the larger R group forms the parent hydrocarbon:</p>
+              <ul class="space-y-1 text-sm sm:text-base">
+                <li>• <span class="font-mono">CH<sub>3</sub>OCH<sub>3</sub></span> → <strong>Methoxymethane</strong> (Dimethyl ether)</li>
+                <li>• <span class="font-mono">C<sub>6</sub>H<sub>5</sub>OCH<sub>3</sub></span> → <strong>Methoxybenzene (Anisole)</strong></li>
+                <li>• <span class="font-mono">C<sub>6</sub>H<sub>5</sub>OC<sub>2</sub>H<sub>5</sub></span> → <strong>Ethoxybenzene (Phenetole)</strong></li>
+              </ul>
+            `,
+            tip: 'Always attach the "-oxy" suffix to the SMALLER alkyl group, and use the LARGER alkyl/aryl chain as the parent!'
+          }
+        ]
+      },
+      {
+        id: 'deck2',
+        number: 'Deck 02',
+        title: 'Structure & Physical Properties',
+        subtitle: '3D Bond Angles (108.9° vs 111.7°), Hydrogen Bonding & Boiling Points',
+        badgeBg: 'bg-softSky',
+        badgeText: 'text-sky-900',
+        accentColor: '#0284C7',
+        cards: [
+          {
+            id: 'd2-c1',
+            tag: '3D Molecular Geometry',
+            question: 'Why is the C–O–H angle in Methanol 108.9°, while C–O–C in Methoxymethane is 111.7°, and C–O length in Phenol is 136 pm?',
+            visual: SVG_STRUCTURES.bondAngles,
+            sandboxType: 'molecules3d',
+            sandboxLabel: 'Rotate 3D Molecules (Three.js)',
+            answer: `
+              <ul class="space-y-2 text-sm sm:text-base">
+                <li>• <strong>Methanol (108.9°):</strong> Slightly less than the tetrahedral angle (109°28′) due to strong <strong>lone pair–lone pair repulsion</strong> on oxygen.</li>
+                <li>• <strong>Methoxymethane (111.7°):</strong> Slightly greater than tetrahedral due to steric repulsion between the <strong>two bulky –CH<sub>3</sub> groups</strong>.</li>
+                <li>• <strong>Phenol C–O bond (136 pm vs 142 pm):</strong> Shorter because of <strong>(i) partial double bond character</strong> from oxygen lone-pair conjugation with the ring, and <strong>(ii) sp<sup>2</sup> hybridisation</strong> of ring carbon.</li>
+              </ul>
+            `,
+            tip: 'Open the 3D Molecule Sandbox tab above to rotate Methanol, Phenol, and Methoxymethane in 3D space!'
+          },
+          {
+            id: 'd2-c2',
+            tag: 'Boiling Point Trends',
+            question: 'Compare the boiling points of Propane (44 u), Methoxymethane (46 u), and Ethanol (46 u). Why the huge jump?',
+            sandboxType: 'boilingPoint',
+            sandboxLabel: 'H-Bonding & Boiling Point Lab',
+            answer: `
+              <p>Despite nearly identical molecular masses (~44–46 u), their boiling points differ dramatically:</p>
+              <ul class="space-y-1.5 text-sm sm:text-base">
+                <li>• <strong>Propane (231 K):</strong> Weak van der Waals dispersion forces only.</li>
+                <li>• <strong>Methoxymethane (248 K):</strong> Weak dipole-dipole interactions; <em>no H-bonding</em>.</li>
+                <li>• <strong>Ethanol (351 K):</strong> Strong <strong>intermolecular O–H···O hydrogen bonding</strong> requires high thermal energy to break.</li>
+              </ul>
+              <p class="text-sm text-slate-600 mt-1">Also, branching in alcohols decreases surface area, lowering van der Waals forces and boiling point.</p>
+            `,
+            tip: 'Order of Boiling Point for comparable mass: Alcohols > Aldehydes/Ketones > Ethers > Alkanes.'
+          },
+          {
+            id: 'd2-c3',
+            tag: 'Solubility in Water',
+            question: 'Why are lower alcohols (Methanol, Ethanol) miscible with water in all proportions, while higher alcohols are insoluble?',
+            answer: `
+              <p><strong>Hydrogen Bonding with Water:</strong> Alcohols and phenols form strong intermolecular hydrogen bonds with water molecules via their polar <span class="font-mono font-bold text-indigo-700">–OH</span> group.</p>
+              <p><strong>Hydrophobic Effect:</strong> As the size of the non-polar alkyl/aryl (<span class="font-mono">R–</span>) group increases, the hydrophobic hydrocarbon tail disrupts water's H-bond network, causing solubility to decrease rapidly.</p>
+            `,
+            tip: 'More –OH groups (like Ethylene glycol or Glycerol) = more H-bonds with water = higher solubility and viscosity!'
+          }
+        ]
+      },
+      {
+        id: 'deck3',
+        number: 'Deck 03',
+        title: 'Preparation Lab',
+        subtitle: 'Hydration, Hydroboration, Grignard, Cumene & Diazonium Synthesis',
+        badgeBg: 'bg-warmPeach',
+        badgeText: 'text-amber-900',
+        accentColor: '#D97706',
+        cards: [
+          {
+            id: 'd3-c1',
+            tag: 'Alkene to Alcohol',
+            question: 'How do Acid-Catalysed Hydration and Hydroboration-Oxidation yield opposite regioisomers from Propene?',
+            sandboxType: 'alkeneLab',
+            sandboxLabel: 'Hydration vs Hydroboration Toggle',
+            answer: `
+              <p><strong>1. Acid-Catalysed Hydration (H<sub>2</sub>O / H<sup>+</sup>):</strong> Follows <strong>Markovnikov's rule</strong> via a 3-step carbocation mechanism (Protonation → Nucleophilic H<sub>2</sub>O attack → Deprotonation) to yield <strong>Propan-2-ol</strong>.</p>
+              <p><strong>2. Hydroboration-Oxidation ((BH<sub>3</sub>)<sub>2</sub>, then H<sub>2</sub>O<sub>2</sub> / OH<sup>−</sup>):</strong> Boron attaches to the less sterically hindered carbon, giving <strong>Anti-Markovnikov</strong> addition in excellent yield → <strong>Propan-1-ol</strong>.</p>
+            `,
+            tip: 'Need 2° alcohol from Propene? Use H₂O/H⁺. Need 1° alcohol from Propene? Use (BH₃)₂ + H₂O₂/OH⁻!'
+          },
+          {
+            id: 'd3-c2',
+            tag: 'Grignard Synthesis',
+            question: 'How can Grignard Reagents (RMgX) be used to synthesize 1°, 2°, and 3° alcohols selectively?',
+            sandboxType: 'grignardLab',
+            sandboxLabel: 'Interactive Grignard Builder',
+            answer: `
+              <p>Nucleophilic addition of <span class="font-mono">R–MgX</span> across the carbonyl (<span class="font-mono">C=O</span>) group forms an adduct, which upon hydrolysis (<span class="font-mono">H<sub>2</sub>O</span>) gives:</p>
+              <ul class="space-y-1.5 text-sm sm:text-base">
+                <li>• <strong>Methanal (<span class="font-mono">HCHO</span>)</strong> + RMgX → <strong>Primary (1°) Alcohol</strong> (<span class="font-mono">RCH<sub>2</sub>OH</span>)</li>
+                <li>• <strong>Other Aldehydes (<span class="font-mono">RCHO</span>)</strong> + R'MgX → <strong>Secondary (2°) Alcohol</strong></li>
+                <li>• <strong>Ketones (<span class="font-mono">RCOR'</span>)</strong> + R''MgX → <strong>Tertiary (3°) Alcohol</strong></li>
+              </ul>
+            `,
+            tip: 'Count the R groups on the carbonyl carbon: 0 R groups (Methanal) = 1°, 1 R group (Aldehyde) = 2°, 2 R groups (Ketone) = 3°!'
+          },
+          {
+            id: 'd3-c3',
+            tag: 'Preparation of Phenols',
+            question: 'What are the 4 key laboratory and industrial routes to prepare Phenol?',
+            sandboxType: 'phenolLab',
+            sandboxLabel: 'Phenol Synthesis Simulator',
+            answer: `
+              <ol class="space-y-1.5 text-sm sm:text-base list-decimal pl-5">
+                <li><strong>From Haloarenes (Dow's Process):</strong> Chlorobenzene + <span class="font-mono">NaOH</span> at <strong>623 K, 300 atm</strong> → Sodium phenoxide → <span class="font-mono">HCl</span> gives Phenol.</li>
+                <li><strong>From Benzenesulphonic Acid:</strong> Benzene + Oleum → <span class="font-mono">C<sub>6</sub>H<sub>5</sub>SO<sub>3</sub>H</span> → molten <span class="font-mono">NaOH</span>, then <span class="font-mono">H<sup>+</sup></span>.</li>
+                <li><strong>From Diazonium Salts:</strong> Aniline + <span class="font-mono">NaNO<sub>2</sub> + HCl</span> (273–278 K) → Benzene diazonium chloride → warm <span class="font-mono">H<sub>2</sub>O</span> gives Phenol + N<sub>2</sub>↑.</li>
+                <li><strong>From Cumene (Commercial):</strong> Cumene (isopropylbenzene) + <span class="font-mono">O<sub>2</sub></span> → Cumene hydroperoxide → <span class="font-mono">H<sup>+</sup>/H<sub>2</sub>O</span> gives <strong>Phenol + Acetone</strong>.</li>
+              </ol>
+            `,
+            tip: 'Cumene process produces the majority of worldwide phenol AND gives valuable Acetone (CH₃COCH₃) as a by-product!'
+          },
+          {
+            id: 'd3-c4',
+            tag: 'Carbonyl Reductions',
+            question: 'Compare NaBH₄, LiAlH₄, and H₂/Pd for reducing aldehydes, ketones, and carboxylic acids.',
+            answer: `
+              <ul class="space-y-2 text-sm sm:text-base">
+                <li>• <strong>Aldehydes → 1° Alcohols</strong> & <strong>Ketones → 2° Alcohols</strong> using <span class="font-mono">H<sub>2</sub>/Pd</span>, <span class="font-mono">NaBH<sub>4</sub></span>, or <span class="font-mono">LiAlH<sub>4</sub></span>.</li>
+                <li>• <strong>Carboxylic Acids → 1° Alcohols:</strong> Requires strong reducing agent <strong>LiAlH<sub>4</sub></strong> followed by <span class="font-mono">H<sub>2</sub>O</span>.</li>
+                <li>• <strong>Commercial Acid Reduction:</strong> Convert acid to ester (<span class="font-mono">RCOOR'</span>) first, then use catalytic hydrogenation (<span class="font-mono">H<sub>2</sub>/Catalyst</span>) because <span class="font-mono">LiAlH<sub>4</sub></span> is expensive.</li>
+              </ul>
+            `,
+            tip: 'NaBH₄ is mild and selective (reduces aldehydes/ketones, leaves esters/acids untouched); LiAlH₄ is a powerhouse that reduces all of them!'
+          }
+        ]
+      },
+      {
+        id: 'deck4',
+        number: 'Deck 04',
+        title: 'Acidity & Chemical Reactions',
+        subtitle: 'pKa Sorter, Phenoxide Resonance, Bond Cleavage & Esterification',
+        badgeBg: 'bg-softMint',
+        badgeText: 'text-emerald-900',
+        accentColor: '#059669',
+        cards: [
+          {
+            id: 'd4-c1',
+            tag: 'Acidity & pKa Trends',
+            question: 'Why is Phenol (pKa 10.0) a million times more acidic than Ethanol (pKa 15.9), and how do –NO₂ and –CH₃ groups affect it?',
+            visual: SVG_STRUCTURES.resonance,
+            sandboxType: 'pkaLab',
+            sandboxLabel: 'pKa Sorter & Resonance Lab',
+            answer: `
+              <ul class="space-y-1.5 text-sm sm:text-base">
+                <li>• <strong>Phenol vs Alcohol:</strong> In phenol, –OH is attached to an electronegative <strong>sp<sup>2</sup> carbon</strong>, and the resulting <strong>phenoxide ion</strong> is stabilized by resonance delocalization across the ring. Alkoxide (<span class="font-mono">RO<sup>−</sup></span>) has localized negative charge.</li>
+                <li>• <strong>Electron-Withdrawing Groups (–NO<sub>2</sub>):</strong> Stabilize phenoxide ion (especially at <em>ortho</em> and <em>para</em> positions) → <strong>Increases acidity (lower pK<sub>a</sub>)</strong>.</li>
+                <li>• <strong>Electron-Releasing Groups (–CH<sub>3</sub>):</strong> Intensify negative charge on oxygen → <strong>Decreases acidity (higher pK<sub>a</sub>)</strong>.</li>
+              </ul>
+            `,
+            tip: 'Smaller pKa = Stronger Acid! Order: p-Nitrophenol (7.1) > o-Nitrophenol (7.2) > m-Nitrophenol (8.3) > Phenol (10.0) > p-Cresol (10.2) > Ethanol (15.9).'
+          },
+          {
+            id: 'd4-c2',
+            tag: 'Alcohol Acid Strength Order',
+            question: 'What is the acidic strength order among Primary (1°), Secondary (2°), and Tertiary (3°) alcohols, and how do they compare to Water?',
+            answer: `
+              <p><strong>Acidic Order:</strong> <span class="font-mono font-bold text-indigo-700">1° (RCH<sub>2</sub>OH) > 2° (R<sub>2</sub>CHOH) > 3° (R<sub>3</sub>COH)</span></p>
+              <p><strong>Why?</strong> Alkyl groups (<span class="font-mono">–CH<sub>3</sub>, –C<sub>2</sub>H<sub>5</sub></span>) are electron-releasing (+I effect), increasing electron density on oxygen and reducing the polarity of the O–H bond.</p>
+              <p><strong>Water vs Alcohols:</strong> Water is a stronger acid than alcohols (<span class="font-mono">RO<sup>−</sup> + H<sub>2</sub>O → ROH + OH<sup>−</sup></span>), meaning alkoxides (<span class="font-mono">RO<sup>−</sup></span>) are stronger bases than <span class="font-mono">OH<sup>−</sup></span>.</p>
+            `,
+            tip: 'Alcohols react with active metals (Na, K, Al) to release H₂ gas, proving their Brønsted acidic nature—yet phenols also react with aqueous NaOH while alcohols do not!'
+          },
+          {
+            id: 'd4-c3',
+            tag: 'Cleavage of O–H vs C–O Bond',
+            question: 'When do alcohols act as Nucleophiles versus Electrophiles?',
+            answer: `
+              <p><strong>1. Alcohols as Nucleophiles (O–H Bond Cleavage):</strong> The unshared electron pairs on oxygen attack electron-deficient carbons (e.g., acylating agents), breaking the <strong>O–H bond</strong>.</p>
+              <p><strong>2. Protonated Alcohols as Electrophiles (C–O Bond Cleavage):</strong> In acidic medium (<span class="font-mono">H<sup>+</sup></span>), <span class="font-mono">R–CH<sub>2</sub>–OH</span> becomes <span class="font-mono">R–CH<sub>2</sub>–OH<sub>2</sub><sup>+</sup></span>. A nucleophile like <span class="font-mono">Br<sup>−</sup></span> attacks carbon, cleaving the <strong>C–O bond</strong> and releasing <span class="font-mono">H<sub>2</sub>O</span>.</p>
+            `,
+            tip: 'O–H breaks = Alcohol is the attacker (Nucleophile). C–O breaks = Protonated alcohol gets attacked (Electrophile).'
+          },
+          {
+            id: 'd4-c4',
+            tag: 'Esterification & Acetylation',
+            question: 'How do alcohols and phenols form esters, and how is Aspirin synthesized?',
+            answer: `
+              <ul class="space-y-1.5 text-sm sm:text-base">
+                <li>• <strong>With Carboxylic Acids (Fischer Esterification):</strong> Reversible reaction in presence of conc. <span class="font-mono">H<sub>2</sub>SO<sub>4</sub></span>; water is removed to shift equilibrium forward.</li>
+                <li>• <strong>With Acid Chlorides (<span class="font-mono">RCOCl</span>):</strong> Carried out in presence of <strong>Pyridine</strong> to neutralize the <span class="font-mono">HCl</span> formed.</li>
+                <li>• <strong>Aspirin Synthesis:</strong> Acetylation of <strong>Salicylic acid</strong> (2-hydroxybenzoic acid) with acetic anhydride (<span class="font-mono">(CH<sub>3</sub>CO)<sub>2</sub>O</span> / H<sup>+</sup>) produces <strong>Acetylsalicylic acid (Aspirin)</strong>.</li>
+              </ul>
+            `,
+            tip: 'In esterification, the H atom comes from the alcohol/phenol (O–H cleavage) and the –OH comes from the carboxylic acid!'
+          }
+        ]
+      }
+    ];
+
+    /* -----------------------------------------------------------------------
+       3. APPLICATION STATE & LOCALSTORAGE PERSISTENCE
+       ----------------------------------------------------------------------- */
+    let appState = {
+      decks: JSON.parse(JSON.stringify(DEFAULT_DECKS)),
+      masteredIds: [],
+      activeDeckId: null,
+      activeCardIdx: 0,
+      isFlipped: false,
+      currentMode: 'card', // 'card' | 'sandbox'
+    };
+
+    function loadState() {
+      try {
+        const savedMastered = localStorage.getItem('unit11_mastered_ids');
+        if (savedMastered) appState.masteredIds = JSON.parse(savedMastered);
+
+        const savedCustomCards = localStorage.getItem('unit11_custom_cards');
+        if (savedCustomCards) {
+          const parsed = JSON.parse(savedCustomCards);
+          if (parsed.customDeckCards && parsed.customDeckCards.length > 0) {
+            ensureCustomDeck().cards = parsed.customDeckCards;
+          }
+          if (parsed.injectedByDeck) {
+            Object.entries(parsed.injectedByDeck).forEach(([deckId, cards]) => {
+              const target = appState.decks.find(d => d.id === deckId);
+              if (target) target.cards.push(...cards);
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Storage load fallback:', e);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('unit11_mastered_ids', JSON.stringify(appState.masteredIds));
+      } catch (e) {}
+    }
+
+    function ensureCustomDeck() {
+      let customDeck = appState.decks.find(d => d.id === 'custom');
+      if (!customDeck) {
+        customDeck = {
+          id: 'custom',
+          number: 'Custom Deck',
+          title: 'My Uploaded Study Notes',
+          subtitle: 'Auto-generated flashcards from your pasted notes & PDF excerpts',
+          badgeBg: 'bg-indigo-100',
+          badgeText: 'text-indigo-900',
+          accentColor: '#4F46E5',
+          cards: []
+        };
+        appState.decks.push(customDeck);
+      }
+      return customDeck;
+    }
+
+    /* -----------------------------------------------------------------------
+       4. TOAST FEEDBACK HELPER
+       ----------------------------------------------------------------------- */
+    let toastTimeout;
+    function showToast(msg, dotColor = 'bg-emerald-400') {
+      const banner = document.getElementById('toast-banner');
+      const messageEl = document.getElementById('toast-message');
+      messageEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full ${dotColor}"></span><span>${msg}</span>`;
+      banner.classList.remove('opacity-0', 'translate-y-4');
+      banner.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        banner.classList.add('opacity-0', 'translate-y-4');
+        banner.classList.remove('opacity-100', 'translate-y-0');
+      }, 2400);
+    }
+
+    /* -----------------------------------------------------------------------
+       5. VIEW 1: STUDY HUB RENDERING & SPRING PHYSICS TILT
+       ----------------------------------------------------------------------- */
+    function renderHub() {
+      const grid = document.getElementById('decks-grid');
+      grid.innerHTML = '';
+
+      let totalCards = 0;
+      let totalMastered = 0;
+
+      appState.decks.forEach(deck => {
+        const deckTotal = deck.cards.length;
+        const deckMastered = deck.cards.filter(c => appState.masteredIds.includes(c.id)).length;
+        totalCards += deckTotal;
+        totalMastered += deckMastered;
+        const pct = deckTotal > 0 ? Math.round((deckMastered / deckTotal) * 100) : 0;
+
+        const hasSandbox = deck.cards.some(c => Boolean(c.sandboxType));
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 'deck-card bg-white/95 backdrop-blur-md rounded-3xl p-6 border border-slate-200/90 shadow-sm cursor-pointer flex flex-col justify-between';
+        cardEl.onclick = () => openDeck(deck.id);
+
+        cardEl.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3.5">
+              <span class="text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded-full ${deck.badgeBg} ${deck.badgeText}">
+                ${deck.number}
+              </span>
+              <div class="flex items-center gap-2">
+                ${hasSandbox ? `<span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">🧪 Interactive Lab</span>` : ''}
+                <span class="text-xs font-mono font-bold text-slate-500">${deckTotal} Cards</span>
+              </div>
+            </div>
+            <h4 class="text-xl font-extrabold text-slate-900 mb-1.5 group-hover:text-indigo-600 transition">${deck.title}</h4>
+            <p class="text-sm text-slate-600 leading-relaxed mb-5">${deck.subtitle}</p>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between text-xs font-bold mb-1.5">
+              <span class="text-slate-500">${deckMastered} / ${deckTotal} Mastered</span>
+              <span class="font-mono text-slate-800">${pct}%</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" style="width: ${pct}%; background-color: ${deck.accentColor}"></div>
+            </div>
+          </div>
+        `;
+
+        // Spring-Physics 3D Tilt on Hover
+        cardEl.addEventListener('mousemove', (e) => {
+          const rect = cardEl.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / rect.width - 0.5;
+          const y = (e.clientY - rect.top) / rect.height - 0.5;
+          cardEl.style.transform = `perspective(1000px) rotateX(${(-y * 7).toFixed(2)}deg) rotateY(${(x * 7).toFixed(2)}deg) translateY(-4px)`;
+        });
+        cardEl.addEventListener('mouseleave', () => {
+          cardEl.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+        });
+
+        grid.appendChild(cardEl);
+      });
+
+      const overallPct = totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0;
+      document.getElementById('overall-mastery-pct').textContent = `${overallPct}%`;
+      document.getElementById('overall-mastery-bar').style.width = `${overallPct}%`;
+      document.getElementById('overall-mastery-count').textContent = `${totalMastered} of ${totalCards} cards mastered`;
+    }
+
+    function goHome() {
+      cleanupThreeMolecule();
+      appState.activeDeckId = null;
+      document.getElementById('view-deck').classList.add('hidden');
+      document.getElementById('view-hub').classList.remove('hidden');
+      renderHub();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetProgress() {
+      appState.masteredIds = [];
+      saveState();
+      renderHub();
+      showToast('Mastery progress cleared', 'bg-amber-400');
+    }
+
+    /* -----------------------------------------------------------------------
+       6. VIEW 2: ACTIVE DECK, CARD FLIP, NAVIGATION & SWIPE PHYSICS
+       ----------------------------------------------------------------------- */
+    function openDeck(deckId) {
+      const deck = appState.decks.find(d => d.id === deckId);
+      if (!deck || deck.cards.length === 0) return;
+
+      appState.activeDeckId = deckId;
+      appState.activeCardIdx = 0;
+      appState.isFlipped = false;
+      appState.currentMode = 'card';
+
+      document.getElementById('view-hub').classList.add('hidden');
+      document.getElementById('view-deck').classList.remove('hidden');
+
+      const badge = document.getElementById('active-deck-badge');
+      badge.className = `text-xs font-extrabold uppercase tracking-wider px-3 py-0.5 rounded-full ${deck.badgeBg} ${deck.badgeText}`;
+      badge.textContent = deck.number;
+      document.getElementById('active-deck-title').textContent = deck.title;
+
+      renderActiveCard();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderActiveCard(animDirection = null) {
+      cleanupThreeMolecule();
+      const deck = appState.decks.find(d => d.id === appState.activeDeckId);
+      if (!deck) return;
+
+      const card = deck.cards[appState.activeCardIdx];
+      const isMastered = appState.masteredIds.includes(card.id);
+
+      // Update Counter
+      document.getElementById('card-counter').textContent = `${appState.activeCardIdx + 1} / ${deck.cards.length}`;
+
+      // Reset Flip State
+      appState.isFlipped = false;
+      const inner = document.getElementById('flashcard-inner');
+      inner.classList.remove('is-flipped');
+
+      // Directional Slide Animation
+      const stage = document.getElementById('flashcard-stage');
+      stage.classList.remove('anim-slide-right', 'anim-slide-left');
+      void stage.offsetWidth;
+      if (animDirection === 'next') stage.classList.add('anim-slide-right');
+      if (animDirection === 'prev') stage.classList.add('anim-slide-left');
+
+      // Populate Front
+      document.getElementById('front-tag').textContent = card.tag || 'Concept';
+      document.getElementById('front-question').innerHTML = card.question;
+      document.getElementById('front-visual').innerHTML = card.visual || '';
+
+      const masteredPill = document.getElementById('front-mastered-pill');
+      if (isMastered) {
+        masteredPill.classList.remove('hidden');
+        masteredPill.classList.add('inline-flex');
+      } else {
+        masteredPill.classList.add('hidden');
+        masteredPill.classList.remove('inline-flex');
+      }
+
+      // Populate Back
+      document.getElementById('back-answer').innerHTML = card.answer;
+      const tipBox = document.getElementById('back-tip-box');
+      if (card.tip) {
+        tipBox.classList.remove('hidden');
+        document.getElementById('back-tip-text').textContent = card.tip;
+      } else {
+        tipBox.classList.add('hidden');
+      }
+
+      // Sandbox Tab Controls
+      const modeTabs = document.getElementById('mode-tabs-wrapper');
+      const openSandboxBackBtn = document.getElementById('open-sandbox-from-back');
+      if (card.sandboxType) {
+        modeTabs.classList.remove('hidden');
+        modeTabs.classList.add('flex');
+        document.getElementById('tab-sandbox-label').textContent = card.sandboxLabel || 'Interactive Lab Sandbox';
+        openSandboxBackBtn.classList.remove('hidden');
+        openSandboxBackBtn.classList.add('inline-flex');
+      } else {
+        modeTabs.classList.add('hidden');
+        modeTabs.classList.remove('flex');
+        openSandboxBackBtn.classList.add('hidden');
+        openSandboxBackBtn.classList.remove('inline-flex');
+      }
+
+      // Default to Flashcard view
+      switchCardMode('card', false);
+    }
+
+    function flipCard() {
+      appState.isFlipped = !appState.isFlipped;
+      const inner = document.getElementById('flashcard-inner');
+      inner.classList.toggle('is-flipped', appState.isFlipped);
+    }
+
+    function nextCard() {
+      const deck = appState.decks.find(d => d.id === appState.activeDeckId);
+      if (!deck) return;
+      appState.activeCardIdx = (appState.activeCardIdx + 1) % deck.cards.length;
+      renderActiveCard('next');
+    }
+
+    function prevCard() {
+      const deck = appState.decks.find(d => d.id === appState.activeDeckId);
+      if (!deck) return;
+      appState.activeCardIdx = (appState.activeCardIdx - 1 + deck.cards.length) % deck.cards.length;
+      renderActiveCard('prev');
+    }
+
+    function setMastery(mastered) {
+      const deck = appState.decks.find(d => d.id === appState.activeDeckId);
+      if (!deck) return;
+      const card = deck.cards[appState.activeCardIdx];
+
+      if (mastered) {
+        if (!appState.masteredIds.includes(card.id)) {
+          appState.masteredIds.push(card.id);
+        }
+        showToast('Marked as Mastered! Moving next...', 'bg-emerald-400');
+        saveState();
+        setTimeout(() => nextCard(), 350);
+      } else {
+        appState.masteredIds = appState.masteredIds.filter(id => id !== card.id);
+        saveState();
+        renderActiveCard();
+        showToast('Kept in Review Queue', 'bg-amber-400');
+      }
+    }
+
+    function switchCardMode(mode, renderSandbox = true) {
+      appState.currentMode = mode;
+      const flashcardStage = document.getElementById('flashcard-stage');
+      const sandboxStage = document.getElementById('sandbox-stage');
+      const btnCard = document.getElementById('tab-btn-card');
+      const btnSandbox = document.getElementById('tab-btn-sandbox');
+
+      if (mode === 'card') {
+        cleanupThreeMolecule();
+        flashcardStage.classList.remove('hidden');
+        sandboxStage.classList.add('hidden');
+        btnCard.className = 'px-4 py-2 rounded-xl text-sm font-bold transition bg-indigo-600 text-white shadow-xs';
+        btnSandbox.className = 'px-4 py-2 rounded-xl text-sm font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
+      } else {
+        flashcardStage.classList.add('hidden');
+        sandboxStage.classList.remove('hidden');
+        btnSandbox.className = 'px-4 py-2 rounded-xl text-sm font-bold transition bg-amber-500 text-white shadow-xs flex items-center gap-1.5';
+        btnCard.className = 'px-4 py-2 rounded-xl text-sm font-bold transition text-slate-600 hover:text-slate-900';
+
+        if (renderSandbox) {
+          const deck = appState.decks.find(d => d.id === appState.activeDeckId);
+          const card = deck.cards[appState.activeCardIdx];
+          buildSandbox(card.sandboxType);
+        }
+      }
+    }
+
+    /* -----------------------------------------------------------------------
+       7. INTERACTIVE SANDBOXES (5 FULL CHEMISTRY EXPERIMENTS)
+       ----------------------------------------------------------------------- */
+    function buildSandbox(type) {
+      const titleEl = document.getElementById('sandbox-title');
+      const container = document.getElementById('sandbox-content');
+      cleanupThreeMolecule();
+
+      if (type === 'molecules3d') {
+        titleEl.textContent = '3D Ball-and-Stick Functional Group Geometry';
+        container.innerHTML = `
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button onclick="selectMolecule3D('methanol')" id="mol-btn-methanol" class="mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white transition">Methanol (CH₃OH)</button>
+            <button onclick="selectMolecule3D('phenol')" id="mol-btn-phenol" class="mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Phenol (C₆H₅OH)</button>
+            <button onclick="selectMolecule3D('ether')" id="mol-btn-ether" class="mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Methoxymethane (CH₃OCH₃)</button>
+          </div>
+          <div id="molecule-3d-viewport" class="mb-4 border border-slate-200">
+            <div class="absolute top-3 left-3 z-10 bg-white/85 backdrop-blur-xs px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 shadow-xs">
+              🖱️ Drag or swipe to rotate in 3D
+            </div>
+            <div class="absolute bottom-3 right-3 z-10 flex items-center gap-2 bg-white/85 backdrop-blur-xs px-3 py-1 rounded-xl text-[11px] font-mono text-slate-600">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-800"></span>C
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500"></span>O
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-sky-300 border border-slate-400"></span>H
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400"></span>Lone Pairs
+            </div>
+          </div>
+          <div id="molecule-3d-stats" class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-800"></div>
+        `;
+        setTimeout(() => selectMolecule3D('methanol'), 30);
+      }
+
+      else if (type === 'boilingPoint') {
+        titleEl.textContent = 'Intermolecular H-Bonding & Boiling Point Explorer';
+        container.innerHTML = `
+          <p class="text-sm text-slate-600 mb-4">Slide or tap a compound of comparable molecular mass (~44–46 u) to inspect its intermolecular forces and boiling point:</p>
+          <div class="grid grid-cols-3 gap-2.5 mb-5">
+            <button onclick="setBPCompound(0)" id="bp-btn-0" class="p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50 text-center transition">
+              <div class="font-bold text-slate-900 text-sm">Propane</div>
+              <div class="font-mono text-xs text-slate-500">44 u &bull; 231 K</div>
+            </button>
+            <button onclick="setBPCompound(1)" id="bp-btn-1" class="p-3 rounded-2xl border-2 border-slate-200 bg-white text-center transition">
+              <div class="font-bold text-slate-900 text-sm">Methoxymethane</div>
+              <div class="font-mono text-xs text-slate-500">46 u &bull; 248 K</div>
+            </button>
+            <button onclick="setBPCompound(2)" id="bp-btn-2" class="p-3 rounded-2xl border-2 border-slate-200 bg-white text-center transition">
+              <div class="font-bold text-slate-900 text-sm">Ethanol</div>
+              <div class="font-mono text-xs text-slate-500">46 u &bull; 351 K</div>
+            </button>
+          </div>
+          <div id="bp-visual-stage" class="p-5 rounded-2xl bg-slate-50 border border-slate-200"></div>
+        `;
+        setBPCompound(2);
+      }
+
+      else if (type === 'alkeneLab') {
+        titleEl.textContent = 'Propene Addition: Markovnikov vs Anti-Markovnikov';
+        container.innerHTML = `
+          <div class="flex flex-wrap gap-2.5 mb-5">
+            <button onclick="setAlkenePath('hydration')" id="alk-btn-hydration" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white transition">
+              1. Acid-Catalysed Hydration (H₂O / H⁺)
+            </button>
+            <button onclick="setAlkenePath('hydroboration')" id="alk-btn-hydroboration" class="px-4 py-2.5 rounded-xl font-bold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+              2. Hydroboration-Oxidation ((BH₃)₂, H₂O₂/OH⁻)
+            </button>
+          </div>
+          <div id="alkene-reaction-display" class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4"></div>
+        `;
+        setAlkenePath('hydration');
+      }
+
+      else if (type === 'grignardLab') {
+        titleEl.textContent = 'Interactive Grignard Alcohol Builder (RMgX + H₂O)';
+        container.innerHTML = `
+          <p class="text-sm text-slate-600 mb-3">Select a Carbonyl Reactant to react with <strong>CH₃MgBr</strong> followed by <strong>H₂O</strong> hydrolysis:</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-5">
+            <button onclick="runGrignard('methanal')" id="grig-btn-methanal" class="p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50 text-left transition">
+              <div class="text-xs font-bold text-indigo-700 uppercase">Formaldehyde</div>
+              <div class="font-mono font-bold text-slate-900">HCHO (Methanal)</div>
+            </button>
+            <button onclick="runGrignard('ethanal')" id="grig-btn-ethanal" class="p-3 rounded-2xl border-2 border-slate-200 bg-white text-left transition">
+              <div class="text-xs font-bold text-sky-700 uppercase">Other Aldehyde</div>
+              <div class="font-mono font-bold text-slate-900">CH₃CHO (Ethanal)</div>
+            </button>
+            <button onclick="runGrignard('propanone')" id="grig-btn-propanone" class="p-3 rounded-2xl border-2 border-slate-200 bg-white text-left transition">
+              <div class="text-xs font-bold text-amber-700 uppercase">Ketone</div>
+              <div class="font-mono font-bold text-slate-900">CH₃COCH₃ (Propanone)</div>
+            </button>
+          </div>
+          <div id="grignard-stage" class="p-5 rounded-2xl bg-slate-50 border border-slate-200"></div>
+        `;
+        runGrignard('methanal');
+      }
+
+      else if (type === 'phenolLab') {
+        titleEl.textContent = 'Phenol Synthesis Simulator (4 Industrial & Lab Routes)';
+        container.innerHTML = `
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+            <button onclick="runPhenolRoute(0)" id="ph-btn-0" class="p-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">1. Chlorobenzene</button>
+            <button onclick="runPhenolRoute(1)" id="ph-btn-1" class="p-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 transition">2. Sulphonic Acid</button>
+            <button onclick="runPhenolRoute(2)" id="ph-btn-2" class="p-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 transition">3. Diazonium Salt</button>
+            <button onclick="runPhenolRoute(3)" id="ph-btn-3" class="p-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 transition">4. Cumene Process</button>
+          </div>
+          <div id="phenol-stage" class="p-5 rounded-2xl bg-slate-50 border border-slate-200"></div>
+        `;
+        runPhenolRoute(3);
+      }
+
+      else if (type === 'pkaLab') {
+        titleEl.textContent = 'Acidity & pKa Ranking Challenge';
+        container.innerHTML = `
+          <p class="text-sm text-slate-600 mb-3">Tap the compounds in order from <strong>STRONGEST ACID (lowest pK<sub>a</sub>)</strong> to <strong>WEAKEST ACID (highest pK<sub>a</sub>)</strong>:</p>
+          <div id="pka-pool" class="flex flex-wrap gap-2 mb-4"></div>
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Your Ranking (Strongest → Weakest)</span>
+              <button onclick="resetPkaChallenge()" class="text-xs font-bold text-indigo-600 hover:underline">Reset Order</button>
+            </div>
+            <div id="pka-ranked-list" class="flex flex-wrap gap-2 min-h-[44px] items-center"></div>
+          </div>
+          <div id="pka-feedback" class="text-sm font-semibold"></div>
+        `;
+        initPkaChallenge();
+      }
+    }
+
+    /* --- Sandbox 1: Boiling Point Visualizer --- */
+    function setBPCompound(idx) {
+      [0, 1, 2].forEach(i => {
+        const btn = document.getElementById(`bp-btn-${i}`);
+        if (btn) {
+          btn.className = i === idx
+            ? 'p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50 text-center transition'
+            : 'p-3 rounded-2xl border-2 border-slate-200 bg-white text-center transition hover:border-slate-300';
+        }
+      });
+
+      const data = [
+        {
+          name: 'Propane (CH₃CH₂CH₃)',
+          mass: '44 u',
+          bp: '231 K (-42 °C)',
+          barPct: 35,
+          barColor: 'bg-slate-400',
+          force: 'Weak van der Waals (London dispersion) forces only',
+          diagram: `<div class="font-mono text-sm text-center py-3 text-slate-600">CH₃–CH₂–CH₃ &nbsp;&nbsp;<span class="text-slate-400">··· weak dispersion ···</span>&nbsp;&nbsp; CH₃–CH₂–CH₃</div>`
+        },
+        {
+          name: 'Methoxymethane (CH₃OCH₃)',
+          mass: '46 u',
+          bp: '248 K (-25 °C)',
+          barPct: 50,
+          barColor: 'bg-amber-400',
+          force: 'Moderate Dipole–Dipole attraction (No O–H bond for H-bonding)',
+          diagram: `<div class="font-mono text-sm text-center py-3 text-amber-900">CH₃–O<sup>δ−</sup>–CH₃ &nbsp;&nbsp;<span class="text-amber-500">··· dipole-dipole ···</span>&nbsp;&nbsp; CH₃–O<sup>δ−</sup>–CH₃</div>`
+        },
+        {
+          name: 'Ethanol (CH₃CH₂OH)',
+          mass: '46 u',
+          bp: '351 K (+78 °C)',
+          barPct: 95,
+          barColor: 'bg-emerald-500',
+          force: 'Strong Intermolecular Hydrogen Bonding (O–H···O)',
+          diagram: `<div class="font-mono text-sm text-center py-3 text-emerald-950 font-bold">C₂H₅–O–H <span class="text-rose-600">······</span> O(C₂H₅)–H <span class="text-rose-600">······</span> O(C₂H₅)–H</div>`
+        }
+      ][idx];
+
+      document.getElementById('bp-visual-stage').innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <span class="font-extrabold text-slate-900">${data.name}</span>
+          <span class="font-mono text-sm font-bold px-3 py-1 rounded-full bg-white border border-slate-200 text-indigo-700">B.P. = ${data.bp}</span>
+        </div>
+        <div class="w-full h-4 bg-white rounded-full overflow-hidden border border-slate-200 mb-3">
+          <div class="h-full ${data.barColor} transition-all duration-500 rounded-full" style="width: ${data.barPct}%"></div>
+        </div>
+        ${data.diagram}
+        <p class="text-xs sm:text-sm text-slate-700 mt-2"><strong>Dominant Force:</strong> ${data.force}</p>
+      `;
+    }
+
+    /* --- Sandbox 2: Alkene Hydration vs Hydroboration --- */
+    function setAlkenePath(mode) {
+      const btnH = document.getElementById('alk-btn-hydration');
+      const btnB = document.getElementById('alk-btn-hydroboration');
+      btnH.className = mode === 'hydration'
+        ? 'px-4 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white transition'
+        : 'px-4 py-2.5 rounded-xl font-bold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+      btnB.className = mode === 'hydroboration'
+        ? 'px-4 py-2.5 rounded-xl font-bold text-sm bg-emerald-600 text-white transition'
+        : 'px-4 py-2.5 rounded-xl font-bold text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+
+      const stage = document.getElementById('alkene-reaction-display');
+      if (mode === 'hydration') {
+        stage.innerHTML = `
+          <div class="font-mono text-sm sm:text-base font-bold text-center p-3 bg-white rounded-xl border border-indigo-100 text-slate-900">
+            CH₃–CH=CH₂ + H₂O <span class="text-indigo-600 mx-1">──(H⁺)──▶</span> CH₃–CH(OH)–CH₃ <span class="text-xs font-sans bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full ml-1">Propan-2-ol (2°)</span>
+          </div>
+          <div class="space-y-2 text-sm text-slate-700">
+            <div class="p-3 rounded-xl bg-white border border-slate-200"><strong>Step 1 (Protonation):</strong> H₃O⁺ attacks the double bond to form the more stable <strong>2° carbocation</strong> (<span class="font-mono">CH₃–CH⁺–CH₃</span>).</div>
+            <div class="p-3 rounded-xl bg-white border border-slate-200"><strong>Step 2 (Nucleophilic Attack):</strong> Water molecule attacks the carbocation to form protonated alcohol (<span class="font-mono">CH₃–CH(OH₂⁺)–CH₃</span>).</div>
+            <div class="p-3 rounded-xl bg-white border border-slate-200"><strong>Step 3 (Deprotonation):</strong> Loss of H⁺ regenerates acid catalyst and yields <strong>Propan-2-ol</strong> (Markovnikov product).</div>
+          </div>
+        `;
+      } else {
+        stage.innerHTML = `
+          <div class="font-mono text-sm sm:text-base font-bold text-center p-3 bg-white rounded-xl border border-emerald-100 text-slate-900">
+            CH₃–CH=CH₂ <span class="text-emerald-600 mx-1">──1. (BH₃)₂ / 2. H₂O₂, OH⁻──▶</span> CH₃–CH₂–CH₂–OH <span class="text-xs font-sans bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full ml-1">Propan-1-ol (1°)</span>
+          </div>
+          <div class="space-y-2 text-sm text-slate-700">
+            <div class="p-3 rounded-xl bg-white border border-slate-200"><strong>Step 1 (Hydroboration):</strong> Diborane adds across C=C such that Boron attaches to the terminal sp² carbon carrying <em>more hydrogens</em>, forming tripropylborane <span class="font-mono">(CH₃CH₂CH₂)₃B</span>.</div>
+            <div class="p-3 rounded-xl bg-white border border-slate-200"><strong>Step 2 (Oxidation):</strong> Alkaline hydrogen peroxide (<span class="font-mono">H₂O₂ / OH⁻</span>) replaces Boron with –OH in excellent yield, giving <strong>Propan-1-ol</strong> (Anti-Markovnikov orientation) + <span class="font-mono">B(OH)₃</span>.</div>
+          </div>
+        `;
+      }
+    }
+
+    /* --- Sandbox 3: Grignard Builder --- */
+    function runGrignard(type) {
+      ['methanal', 'ethanal', 'propanone'].forEach(k => {
+        const btn = document.getElementById(`grig-btn-${k}`);
+        if (btn) {
+          btn.className = k === type
+            ? 'p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50 text-left transition'
+            : 'p-3 rounded-2xl border-2 border-slate-200 bg-white text-left transition hover:border-slate-300';
+        }
+      });
+
+      const reactions = {
+        methanal: {
+          reactant: 'H–CHO (Methanal)',
+          adduct: '[CH₃–CH₂–OMgBr]',
+          product: 'CH₃–CH₂–OH (Ethanol)',
+          degree: 'Primary (1°) Alcohol',
+          badge: 'bg-emerald-100 text-emerald-900'
+        },
+        ethanal: {
+          reactant: 'CH₃–CHO (Ethanal)',
+          adduct: '[CH₃–CH(CH₃)–OMgBr]',
+          product: 'CH₃–CH(OH)–CH₃ (Propan-2-ol)',
+          degree: 'Secondary (2°) Alcohol',
+          badge: 'bg-sky-100 text-sky-900'
+        },
+        propanone: {
+          reactant: 'CH₃–CO–CH₃ (Propanone)',
+          adduct: '[(CH₃)₃C–OMgBr]',
+          product: '(CH₃)₃C–OH (2-Methylpropan-2-ol)',
+          degree: 'Tertiary (3°) Alcohol',
+          badge: 'bg-amber-100 text-amber-900'
+        }
+      }[type];
+
+      document.getElementById('grignard-stage').innerHTML = `
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center font-mono text-sm">
+          <div class="p-3 bg-white rounded-xl border border-slate-200 w-full">
+            <div class="text-[11px] font-sans text-slate-400 uppercase font-bold">Carbonyl + CH₃MgBr</div>
+            <div class="font-bold text-slate-900 mt-1">${reactions.reactant}</div>
+          </div>
+          <div class="text-indigo-600 font-extrabold">──▶</div>
+          <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 w-full">
+            <div class="text-[11px] font-sans text-amber-700 uppercase font-bold">Nucleophilic Adduct</div>
+            <div class="font-bold text-amber-950 mt-1">${reactions.adduct}</div>
+          </div>
+          <div class="text-indigo-600 font-extrabold">──(H₂O)──▶</div>
+          <div class="p-3 bg-white rounded-xl border-2 border-emerald-400 w-full">
+            <span class="text-[11px] font-sans font-extrabold px-2 py-0.5 rounded-full ${reactions.badge}">${reactions.degree}</span>
+            <div class="font-bold text-slate-900 mt-1">${reactions.product}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* --- Sandbox 4: Phenol Synthesis Simulator --- */
+    function runPhenolRoute(idx) {
+      [0, 1, 2, 3].forEach(i => {
+        const btn = document.getElementById(`ph-btn-${i}`);
+        if (btn) {
+          btn.className = i === idx
+            ? 'p-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white transition'
+            : 'p-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        }
+      });
+
+      const routes = [
+        {
+          title: "1. Dow's Process (From Chlorobenzene)",
+          flow: "C₆H₅Cl + NaOH (623 K, 300 atm) ──▶ C₆H₅O⁻Na⁺ (Sodium phenoxide) ──(HCl)──▶ C₆H₅OH (Phenol)",
+          note: "High temperature and pressure are needed to cleave the strong C–Cl bond with partial double-bond character."
+        },
+        {
+          title: "2. From Benzenesulphonic Acid",
+          flow: "Benzene + Oleum ──▶ C₆H₅SO₃H ──(1. Molten NaOH / 2. H⁺)──▶ C₆H₅OH (Phenol)",
+          note: "Sulphonation introduces –SO₃H, which is fused with molten NaOH and acidified."
+        },
+        {
+          title: "3. From Diazonium Salts",
+          flow: "Aniline (C₆H₅NH₂) + NaNO₂ + HCl (273–278 K) ──▶ C₆H₅N₂⁺Cl⁻ ──(H₂O, Warm)──▶ Phenol + N₂↑ + HCl",
+          note: "Ice-cold diazotization followed by gentle warming with water releases nitrogen gas and yields pure phenol."
+        },
+        {
+          title: "4. Cumene Process (Global Commercial Method)",
+          flow: "Cumene (Isopropylbenzene) + O₂ (Air) ──▶ Cumene hydroperoxide ──(H⁺ / H₂O)──▶ Phenol + CH₃COCH₃ (Acetone)",
+          note: "Most of the world's phenol is made this way because Acetone is recovered as a valuable co-product!"
+        }
+      ][idx];
+
+      document.getElementById('phenol-stage').innerHTML = `
+        <h4 class="font-extrabold text-slate-900 mb-2">${routes.title}</h4>
+        <div class="font-mono text-xs sm:text-sm font-bold p-3.5 rounded-xl bg-white border border-slate-200 text-indigo-950 mb-3 leading-relaxed">
+          ${routes.flow}
+        </div>
+        <p class="text-xs sm:text-sm text-slate-600">${routes.note}</p>
+      `;
+    }
+
+    /* --- Sandbox 5: Acidity & pKa Sorter Mini-Game --- */
+    const PKA_ITEMS = [
+      { id: 'p-nitro', name: 'p-Nitrophenol', pka: 7.1, rank: 1 },
+      { id: 'o-nitro', name: 'o-Nitrophenol', pka: 7.2, rank: 2 },
+      { id: 'm-nitro', name: 'm-Nitrophenol', pka: 8.3, rank: 3 },
+      { id: 'phenol', name: 'Phenol', pka: 10.0, rank: 4 },
+      { id: 'p-cresol', name: 'p-Cresol', pka: 10.2, rank: 5 },
+      { id: 'ethanol', name: 'Ethanol', pka: 15.9, rank: 6 }
+    ];
+    let pkaUserOrder = [];
+
+    function initPkaChallenge() {
+      pkaUserOrder = [];
+      const shuffled = [...PKA_ITEMS].sort(() => Math.random() - 0.5);
+      const poolEl = document.getElementById('pka-pool');
+      poolEl.innerHTML = '';
+      shuffled.forEach(item => {
+        const btn = document.createElement('button');
+        btn.id = `pka-chip-${item.id}`;
+        btn.className = 'px-3.5 py-2 rounded-xl bg-white border-2 border-slate-200 hover:border-indigo-500 text-sm font-bold text-slate-800 transition active:scale-95';
+        btn.textContent = item.name;
+        btn.onclick = () => pickPkaItem(item);
+        poolEl.appendChild(btn);
+      });
+      renderPkaRanked();
+    }
+
+    function resetPkaChallenge() {
+      initPkaChallenge();
+    }
+
+    function pickPkaItem(item) {
+      if (pkaUserOrder.some(x => x.id === item.id)) return;
+      pkaUserOrder.push(item);
+      const chip = document.getElementById(`pka-chip-${item.id}`);
+      if (chip) {
+        chip.disabled = true;
+        chip.className = 'px-3.5 py-2 rounded-xl bg-slate-100 border-2 border-slate-100 text-sm font-bold text-slate-400 cursor-not-allowed';
+      }
+      renderPkaRanked();
+    }
+
+    function renderPkaRanked() {
+      const listEl = document.getElementById('pka-ranked-list');
+      const fbEl = document.getElementById('pka-feedback');
+      if (pkaUserOrder.length === 0) {
+        listEl.innerHTML = `<span class="text-xs text-slate-400 italic">Tap compounds above to build your acid-strength order...</span>`;
+        fbEl.innerHTML = '';
+        return;
+      }
+
+      listEl.innerHTML = pkaUserOrder.map((item, idx) => `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold">
+          <span>#${idx + 1} ${item.name}</span>
+          ${pkaUserOrder.length === PKA_ITEMS.length ? `<span class="font-mono bg-white/20 px-1.5 rounded">pKa ${item.pka}</span>` : ''}
+        </span>
+      `).join('<span class="text-slate-400 font-bold">&gt;</span>');
+
+      if (pkaUserOrder.length === PKA_ITEMS.length) {
+        const isCorrect = pkaUserOrder.every((item, idx) => item.rank === idx + 1);
+        if (isCorrect) {
+          fbEl.innerHTML = `<div class="p-3.5 rounded-xl bg-emerald-100 text-emerald-900">🎉 Spot on! Strongest acid has the lowest pK<sub>a</sub>: p-Nitrophenol (7.1) &gt; o-Nitrophenol (7.2) &gt; m-Nitrophenol (8.3) &gt; Phenol (10.0) &gt; p-Cresol (10.2) &gt; Ethanol (15.9).</div>`;
+        } else {
+          fbEl.innerHTML = `<div class="p-3.5 rounded-xl bg-amber-100 text-amber-900">Not quite! Remember: <strong>p-Nitrophenol (7.1)</strong> is slightly stronger than <strong>o-Nitrophenol (7.2)</strong> due to intramolecular H-bonding in o-nitrophenol, followed by <strong>m-Nitrophenol (8.3)</strong>, <strong>Phenol (10.0)</strong>, <strong>p-Cresol (10.2)</strong>, and <strong>Ethanol (15.9)</strong>.</div>`;
+        }
+      }
+    }
+
+    /* -----------------------------------------------------------------------
+       8. THREE.JS 3D INTERACTIVE MOLECULE VIEWER (SANDBOX)
+       ----------------------------------------------------------------------- */
+    let molScene, molCamera, molRenderer, molGroup, molAnimId;
+    let isDraggingMol = false, prevMouse = { x: 0, y: 0 }, rotVel = { x: 0.005, y: 0.01 };
+
+    function cleanupThreeMolecule() {
+      if (molAnimId) cancelAnimationFrame(molAnimId);
+      molAnimId = null;
+      if (molRenderer) {
+        molRenderer.dispose();
+        molRenderer = null;
+      }
+    }
+
+    function selectMolecule3D(type) {
+      ['methanol', 'phenol', 'ether'].forEach(k => {
+        const btn = document.getElementById(`mol-btn-${k}`);
+        if (btn) {
+          btn.className = k === type
+            ? 'mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white transition'
+            : 'mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        }
+      });
+
+      const statsMap = {
+        methanol: `<strong>Methanol (CH₃OH):</strong> C–O bond length = <strong>142 pm</strong>, O–H bond = <strong>96 pm</strong>, C–O–H bond angle = <strong>108.9°</strong> (compressed slightly below 109.5° by oxygen's two lone pairs).`,
+        phenol: `<strong>Phenol (C₆H₅OH):</strong> C–O bond length = <strong>136 pm</strong> (shorter due to resonance partial double-bond character & sp² carbon), C–O–H angle = <strong>109°</strong>.`,
+        ether: `<strong>Methoxymethane (CH₃OCH₃):</strong> C–O bond length = <strong>141 pm</strong>, C–O–C bond angle = <strong>111.7°</strong> (widened above tetrahedral 109.5° due to steric repulsion between bulky methyl groups).`
+      };
+      const statsEl = document.getElementById('molecule-3d-stats');
+      if (statsEl) statsEl.innerHTML = statsMap[type];
+
+      const container = document.getElementById('molecule-3d-viewport');
+      if (!container || typeof THREE === 'undefined') return;
+
+      cleanupThreeMolecule();
+      // Remove any old canvas
+      const oldCanvas = container.querySelector('canvas');
+      if (oldCanvas) oldCanvas.remove();
+
+      const w = container.clientWidth || 600;
+      const h = container.clientHeight || 290;
+
+      molScene = new THREE.Scene();
+      molCamera = new THREE.PerspectiveCamera(42, w / h, 0.1, 100);
+      molCamera.position.set(0, 0.4, 6.2);
+
+      molRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      molRenderer.setSize(w, h);
+      molRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(molRenderer.domElement);
+
+      // Lighting
+      const ambient = new THREE.AmbientLight(0xffffff, 0.75);
+      molScene.add(ambient);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+      dirLight.position.set(5, 7, 6);
+      molScene.add(dirLight);
+
+      molGroup = new THREE.Group();
+      molScene.add(molGroup);
+
+      // Materials
+      const matC = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.1 });
+      const matO = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.3, metalness: 0.1 });
+      const matH = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, roughness: 0.25 });
+      const matLP = new THREE.MeshStandardMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.65, roughness: 0.2 });
+      const matBond = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 });
+
+      function addAtom(pos, radius, mat) {
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 24, 24), mat);
+        mesh.position.set(...pos);
+        molGroup.add(mesh);
+      }
+
+      function addBond(p1, p2, doubleBond = false) {
+        const v1 = new THREE.Vector3(...p1);
+        const v2 = new THREE.Vector3(...p2);
+        const dir = new THREE.Vector3().subVectors(v2, v1);
+        const len = dir.length();
+        const mid = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
+
+        const makeCyl = (offset = 0) => {
+          const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, len, 12), matBond);
+          cyl.position.copy(mid);
+          if (offset) cyl.position.z += offset;
+          cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+          molGroup.add(cyl);
+        };
+
+        if (doubleBond) {
+          makeCyl(0.09);
+          makeCyl(-0.09);
+        } else {
+          makeCyl(0);
+        }
+      }
+
+      if (type === 'methanol') {
+        const posO = [0.6, 0.3, 0];
+        const posC = [-0.75, -0.1, 0];
+        const posHO = [1.35, -0.35, 0];
+        addAtom(posO, 0.42, matO);
+        addAtom(posC, 0.46, matC);
+        addAtom(posHO, 0.28, matH);
+        addBond(posO, posC);
+        addBond(posO, posHO);
+
+        // 3 Methyl H atoms
+        const hCoords = [[-1.3, 0.85, 0.4], [-1.3, -0.9, 0.55], [-0.85, -0.25, -1.05]];
+        hCoords.forEach(hc => {
+          addAtom(hc, 0.27, matH);
+          addBond(posC, hc);
+        });
+
+        // 2 Oxygen Lone Pairs
+        addAtom([0.75, 0.95, 0.65], 0.2, matLP);
+        addAtom([0.75, 0.95, -0.65], 0.2, matLP);
+      } else if (type === 'ether') {
+        const posO = [0, 0.45, 0];
+        const posC1 = [-1.15, -0.25, 0];
+        const posC2 = [1.15, -0.25, 0];
+        addAtom(posO, 0.42, matO);
+        addAtom(posC1, 0.46, matC);
+        addAtom(posC2, 0.46, matC);
+        addBond(posO, posC1);
+        addBond(posO, posC2);
+
+        // Methyl Hydrogens
+        [[-1.95, 0.45, 0.3], [-1.25, -1.15, 0.6], [-1.25, -0.5, -0.95]].forEach(hc => {
+          addAtom(hc, 0.26, matH);
+          addBond(posC1, hc);
+        });
+        [[1.95, 0.45, -0.3], [1.25, -1.15, -0.6], [1.25, -0.5, 0.95]].forEach(hc => {
+          addAtom(hc, 0.26, matH);
+          addBond(posC2, hc);
+        });
+
+        // Lone pairs
+        addAtom([0, 1.15, 0.62], 0.19, matLP);
+        addAtom([0, 1.15, -0.62], 0.19, matLP);
+      } else if (type === 'phenol') {
+        // Hexagon Benzene Ring
+        const r = 1.25;
+        const ringPts = [];
+        for (let i = 0; i < 6; i++) {
+          const ang = (i * Math.PI) / 3;
+          ringPts.push([Math.cos(ang) * r - 0.5, Math.sin(ang) * r, 0]);
+        }
+        ringPts.forEach((pt, i) => {
+          addAtom(pt, 0.38, matC);
+          const next = ringPts[(i + 1) % 6];
+          addBond(pt, next, i % 2 === 0);
+          if (i !== 0) {
+            const hPt = [pt[0] + Math.cos((i * Math.PI) / 3) * 0.85, pt[1] + Math.sin((i * Math.PI) / 3) * 0.85, 0];
+            addAtom(hPt, 0.24, matH);
+            addBond(pt, hPt);
+          }
+        });
+        // -OH attached at index 0 (rightmost carbon)
+        const c0 = ringPts[0];
+        const posO = [c0[0] + 1.15, c0[1], 0];
+        const posH = [posO[0] + 0.55, posO[1] + 0.72, 0];
+        addAtom(posO, 0.4, matO);
+        addAtom(posH, 0.26, matH);
+        addBond(c0, posO);
+        addBond(posO, posH);
+        addAtom([posO[0], posO[1] - 0.55, 0.55], 0.18, matLP);
+      }
+
+      // Pointer & Touch Rotation with Momentum Damping
+      const domEl = molRenderer.domElement;
+      const startDrag = (x, y) => { isDraggingMol = true; prevMouse = { x, y }; };
+      const moveDrag = (x, y) => {
+        if (!isDraggingMol) return;
+        const dx = x - prevMouse.x;
+        const dy = y - prevMouse.y;
+        rotVel.y = dx * 0.012;
+        rotVel.x = dy * 0.012;
+        molGroup.rotation.y += rotVel.y;
+        molGroup.rotation.x += rotVel.x;
+        prevMouse = { x, y };
+      };
+      const endDrag = () => { isDraggingMol = false; };
+
+      domEl.onmousedown = e => startDrag(e.clientX, e.clientY);
+      window.onmousemove = e => moveDrag(e.clientX, e.clientY);
+      window.onmouseup = endDrag;
+      domEl.ontouchstart = e => { if (e.touches[0]) startDrag(e.touches[0].clientX, e.touches[0].clientY); };
+      domEl.ontouchmove = e => { if (e.touches[0]) moveDrag(e.touches[0].clientX, e.touches[0].clientY); };
+      domEl.ontouchend = endDrag;
+
+      function animateMol() {
+        molAnimId = requestAnimationFrame(animateMol);
+        if (!isDraggingMol && molGroup) {
+          molGroup.rotation.y += rotVel.y;
+          molGroup.rotation.x += rotVel.x;
+          rotVel.x *= 0.94;
+          rotVel.y = rotVel.y * 0.94 + 0.004 * 0.06; // subtle idle spin
+        }
+        if (molRenderer && molScene && molCamera) {
+          molRenderer.render(molScene, molCamera);
+        }
+      }
+      animateMol();
+    }
+
+    /* -----------------------------------------------------------------------
+       9. AMBIENT HERO 3D FLOATING MOLECULES (THREE.JS BACKGROUND)
+       ----------------------------------------------------------------------- */
+    function initAmbientScene() {
+      const canvas = document.getElementById('ambient-canvas');
+      if (!canvas || typeof THREE === 'undefined') return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.z = 16;
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+
+      const light1 = new THREE.DirectionalLight(0xffffff, 0.9);
+      light1.position.set(6, 8, 10);
+      scene.add(light1);
+      scene.add(new THREE.AmbientLight(0xe0e7ff, 0.7));
+
+      const palette = [0xc4b5fd, 0xbae6fd, 0xfed7aa, 0xa7f3d0];
+      const clusters = [];
+
+      for (let i = 0; i < 11; i++) {
+        const g = new THREE.Group();
+        const matMain = new THREE.MeshStandardMaterial({
+          color: palette[i % palette.length],
+          roughness: 0.4,
+          transparent: true,
+          opacity: 0.55
+        });
+        const core = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 16), matMain);
+        g.add(core);
+
+        // Two bonded satellite atoms (water/alcohol/ether motif)
+        const sat1 = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), matMain);
+        sat1.position.set(0.85, 0.45, 0);
+        const sat2 = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), matMain);
+        sat2.position.set(-0.85, 0.45, 0);
+        g.add(sat1, sat2);
+
+        g.position.set(
+          (Math.random() - 0.5) * 26,
+          (Math.random() - 0.5) * 16,
+          (Math.random() - 0.5) * 8 - 3
+        );
+        g.userData = {
+          vx: (Math.random() - 0.5) * 0.008,
+          vy: (Math.random() - 0.5) * 0.008,
+          rx: (Math.random() - 0.5) * 0.008,
+          ry: (Math.random() - 0.5) * 0.008
+        };
+        scene.add(g);
+        clusters.push(g);
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      function tickAmbient() {
+        requestAnimationFrame(tickAmbient);
+        clusters.forEach(c => {
+          c.position.x += c.userData.vx;
+          c.position.y += c.userData.vy;
+          c.rotation.x += c.userData.rx;
+          c.rotation.y += c.userData.ry;
+          if (Math.abs(c.position.x) > 15) c.userData.vx *= -1;
+          if (Math.abs(c.position.y) > 9) c.userData.vy *= -1;
+        });
+        renderer.render(scene, camera);
+      }
+      tickAmbient();
+    }
+
+    /* -----------------------------------------------------------------------
+       10. DROP YOUR OWN NOTES (AUTO-PARSER INTO FLASHCARDS)
+       ----------------------------------------------------------------------- */
+    function openNotesModal() {
+      const modal = document.getElementById('notes-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeNotesModal() {
+      const modal = document.getElementById('notes-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function fillSampleNotes() {
+      document.getElementById('custom-notes-input').value =
+`Lucas Reagent - A mixture of concentrated HCl and anhydrous ZnCl2 used to distinguish 1°, 2°, and 3° alcohols based on turbidity speed.
+Q: Why do ethers have much lower boiling points than isomeric alcohols?
+A: Ethers lack an O–H bond and cannot form intermolecular hydrogen bonds, whereas alcohols form strong O–H···O hydrogen bond networks.
+Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with sodium alkoxide (R–ONa) via SN2 mechanism to yield symmetrical or unsymmetrical ethers.`;
+    }
+
+    function generateCustomCards() {
+      const raw = document.getElementById('custom-notes-input').value.trim();
+      const targetDeckId = document.getElementById('custom-target-deck').value;
+      if (!raw) {
+        showToast('Please paste some notes first!', 'bg-amber-400');
+        return;
+      }
+
+      const newCards = parseNotesToCards(raw);
+      if (newCards.length === 0) {
+        showToast('Could not detect cards. Try "Term - Definition" format.', 'bg-amber-400');
+        return;
+      }
+
+      const targetDeck = targetDeckId === 'custom'
+        ? ensureCustomDeck()
+        : appState.decks.find(d => d.id === targetDeckId);
+
+      targetDeck.cards.push(...newCards);
+
+      // Save to localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem('unit11_custom_cards') || '{"customDeckCards":[],"injectedByDeck":{}}');
+        if (targetDeck.id === 'custom') {
+          existing.customDeckCards.push(...newCards);
+        } else {
+          existing.injectedByDeck[targetDeck.id] = (existing.injectedByDeck[targetDeck.id] || []).concat(newCards);
+        }
+        localStorage.setItem('unit11_custom_cards', JSON.stringify(existing));
+      } catch (e) {}
+
+      document.getElementById('custom-notes-input').value = '';
+      closeNotesModal();
+      renderHub();
+      showToast(`Created ${newCards.length} interactive flashcard(s)!`, 'bg-emerald-400');
+      openDeck(targetDeck.id);
+    }
+
+    function parseNotesToCards(text) {
+      const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+      const cards = [];
+      let i = 0;
+
+      while (i < lines.length) {
+        const line = lines[i];
+        // Pattern 1: Q: ... followed by A: ...
+        if (/^Q[:.\-]\s*/i.test(line) && i + 1 < lines.length && /^A[:.\-]\s*/i.test(lines[i + 1])) {
+          const q = line.replace(/^Q[:.\-]\s*/i, '');
+          const a = lines[i + 1].replace(/^A[:.\-]\s*/i, '');
+          cards.push({
+            id: `custom-${Date.now()}-${cards.length}`,
+            tag: 'Custom Q&A',
+            question: q,
+            answer: `<p>${a}</p>`,
+            tip: 'Auto-generated from your custom study notes.'
+          });
+          i += 2;
+          continue;
+        }
+
+        // Pattern 2: Term - Definition or Term : Definition
+        const splitMatch = line.match(/^([^:\-–]{3,70})\s*(?:[:\-–])\s*(.+)$/);
+        if (splitMatch) {
+          cards.push({
+            id: `custom-${Date.now()}-${cards.length}`,
+            tag: 'Custom Concept',
+            question: `Explain: ${splitMatch[1].trim()}`,
+            answer: `<p><strong>${splitMatch[1].trim()}:</strong> ${splitMatch[2].trim()}</p>`,
+            tip: 'Auto-generated from your custom study notes.'
+          });
+          i += 1;
+          continue;
+        }
+
+        // Pattern 3: Standalone paragraph / statement
+        const words = line.split(' ');
+        const headline = words.slice(0, 6).join(' ') + (words.length > 6 ? '...' : '');
+        cards.push({
+          id: `custom-${Date.now()}-${cards.length}`,
+          tag: 'Note Snippet',
+          question: `Key Concept Check: "${headline}"`,
+          answer: `<p>${line}</p>`,
+          tip: 'Auto-generated from your custom study notes.'
+        });
+        i += 1;
+      }
+      return cards;
+    }
+
+    /* -----------------------------------------------------------------------
+       11. KEYBOARD SHORTCUTS & MOBILE TOUCH SWIPE GESTURES
+       ----------------------------------------------------------------------- */
+    document.addEventListener('keydown', (e) => {
+      if (!appState.activeDeckId) return;
+      const modalOpen = !document.getElementById('notes-modal').classList.contains('hidden');
+      if (modalOpen) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (appState.currentMode === 'card') flipCard();
+      } else if (e.code === 'ArrowRight') {
+        nextCard();
+      } else if (e.code === 'ArrowLeft') {
+        prevCard();
+      } else if (e.key.toLowerCase() === 'm') {
+        const deck = appState.decks.find(d => d.id === appState.activeDeckId);
+        const card = deck.cards[appState.activeCardIdx];
+        const currentlyMastered = appState.masteredIds.includes(card.id);
+        setMastery(!currentlyMastered);
+      }
+    });
+
+    // Touch Swipe on Flashcard Stage
+    let touchStartX = 0;
+    const fcStage = document.getElementById('flashcard-stage');
+    fcStage.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    fcStage.addEventListener('touchend', (e) => {
+      const diff = e.changedTouches[0].screenX - touchStartX;
+      if (Math.abs(diff) > 55) {
+        if (diff < 0) nextCard();
+        else prevCard();
+      }
+    }, { passive: true });
+
+    // Initialize Application on Load
+    window.onload = function () {
+      loadState();
+      renderHub();
+      initAmbientScene();
+    };
+  </script>
+</body>
+</html>
