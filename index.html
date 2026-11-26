@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Unit 11: Alcohols, Phenols & Ethers — Interactive Visual Lab</title>
+  <title>Unit 11: Alcohols, Phenols & Ethers — Interactive Chemistry Lab</title>
 
   <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,17 +16,177 @@
   <!-- Three.js r128 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-  <!-- Browser-Side OCR & Document Extraction Libraries (Tesseract.js v5, PDF.js, Mammoth.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- Browser-Side OCR & Document Extraction Libraries (Tesseract.js v4, PDF.js v3.11.174, Mammoth.js v1.6.0) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
   <script>
-// ... existing code ... -->
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            alabaster: '#F8F9FA',
+            sage: '#EDF2F0',
+            porcelain: '#FFFFFF',
+            softLilac: '#E9D8FD',
+            softSky: '#E0F2FE',
+            warmPeach: '#FFEDD5',
+            softMint: '#D1FAE5',
+            slateInk: '#1E293B',
+            electricIndigo: '#4F46E5',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background-color: #F8F9FA;
+      color: #1E293B;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* Ambient 3D Background Canvas */
+    #ambient-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.72;
+    }
+
+    /* Deck Card Spring Physics Hover */
+    .deck-card {
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    .deck-card:hover {
+      box-shadow: 0 20px 35px -12px rgba(79, 70, 229, 0.14), 0 8px 16px -8px rgba(30, 41, 59, 0.08);
+    }
+
+    /* 3D Flashcard Flip Mechanics */
+    .perspective-stage {
+      perspective: 1400px;
+    }
+
+    .card-3d-inner {
+      position: relative;
+      width: 100%;
+      transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+      transform-style: preserve-3d;
+    }
+
+    .card-3d-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: #FFFFFF;
+      border-radius: 1.75rem;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      box-shadow: 0 18px 40px -15px rgba(15, 23, 42, 0.09);
+    }
+
+    .card-back {
+      position: absolute;
+      inset: 0;
+      transform: rotateY(180deg);
+      overflow-y: auto;
+    }
+
+    /* Directional Card Slide Animations */
+    @keyframes slideFromRight {
+      from { opacity: 0; transform: translateX(36px) scale(0.98); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    @keyframes slideFromLeft {
+      from { opacity: 0; transform: translateX(-36px) scale(0.98); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    .anim-next {
+      animation: slideFromRight 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .anim-prev {
+      animation: slideFromLeft 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* Interactive 3D Molecule Viewport */
+    #molecule-3d-viewport {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      border-radius: 1.25rem;
+      background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #EDF2F0 100%);
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #molecule-3d-viewport:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body class="bg-alabaster text-slateInk antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- Ambient Floating 3D Molecules Background -->
+  <canvas id="ambient-canvas"></canvas>
+
+  <!-- Toast Notification Pill -->
+  <div id="toast-banner" class="fixed bottom-5 right-5 z-50 pointer-events-none opacity-0 translate-y-4 transition-all duration-300">
+    <div id="toast-message" class="bg-slate-900 text-white text-sm font-semibold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+      <span>Saved</span>
+    </div>
+  </div>
+
+  <!-- Main App Wrapper -->
+  <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- Top Navigation Bar -->
+    <header class="flex flex-wrap items-center justify-between gap-4 mb-7">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+        <div class="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
+          <!-- Benzene Ring SVG Logo -->
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polygon points="12,2 20,7 20,17 12,22 4,17 4,7" />
+            <circle cx="12" cy="12" r="4" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-softLilac text-purple-900">Class XII &bull; Unit 11</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Alcohols, Phenols &amp; Ethers</h1>
+        </div>
+      </div>
+
       <div class="flex items-center gap-2.5">
         <button onclick="openNotesModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-sm shadow-sm shadow-indigo-200 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-          <span>Upload / OCR Notes</span>
+          <span>+ Upload Notes / OCR</span>
         </button>
       </div>
     </header>
@@ -35,24 +195,24 @@
          VIEW 1: CLEAN STUDY HUB (LANDING SCREEN — PROGRESSIVE DISCLOSURE)
          ===================================================================== -->
     <main id="view-hub" class="transition-opacity duration-300">
-      <!-- Sleek Hero Banner & Overall Mastery Progress -->
-      <section class="bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm mb-8">
+      <!-- Hero Card & Overall Mastery Progress -->
+      <section class="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm mb-8">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div class="max-w-xl">
-            <p class="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-1.5">Interactive Visual Chemistry Lab</p>
+            <p class="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-1.5">Visual &amp; Interactive Chemistry Lab</p>
             <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight mb-2">
-              Master Organic Mechanisms Without Overload.
+              Learn Mechanisms Fast Without Textbook Overload.
             </h2>
             <p class="text-slate-600 text-base leading-relaxed mb-4">
-              Choose a focused study deck below, or upload any PDF, photo of handwritten/textbook notes, Word doc, or text file to auto-generate OCR flashcards.
+              Pick one focused topic deck below to explore 3D molecular geometry, interactive reaction builders, and active-recall flashcards—or upload your own PDF, photo, or Word notes for instant OCR flashcards.
             </p>
-            <button onclick="openNotesModal()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-bold text-sm transition">
-              <span>📷 Scan Photo / Upload PDF Notes (OCR Enabled)</span>
+            <button onclick="openNotesModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-bold text-sm transition">
+              <span>📷 Scan Photo / Upload PDF or DOCX Notes (OCR Enabled)</span>
             </button>
           </div>
 
-          <!-- Mastery Progress Card -->
-          <div class="bg-sage/80 border border-emerald-200/70 rounded-2xl p-5 min-w-[240px] sm:min-w-[270px]">
+          <!-- Overall Mastery Widget -->
+          <div class="bg-sage border border-emerald-200/80 rounded-2xl p-5 min-w-[240px] sm:min-w-[275px]">
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-bold text-slate-800">Chapter Mastery</span>
               <span id="overall-mastery-pct" class="text-sm font-mono font-bold text-emerald-700 bg-white px-2.5 py-0.5 rounded-full shadow-xs">0%</span>
@@ -62,29 +222,30 @@
             </div>
             <div class="flex items-center justify-between text-xs text-slate-600">
               <span id="overall-mastery-count">0 of 0 cards mastered</span>
-              <button onclick="resetProgress()" class="text-slate-500 hover:text-rose-600 underline font-medium transition">Reset</button>
+              <button onclick="resetProgress()" class="text-slate-500 hover:text-rose-600 underline font-semibold transition">Reset</button>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 4 Distinct Topic Decks Grid (+ Custom Deck if added) -->
+      <!-- Deck Grid Header -->
       <div class="flex items-center justify-between mb-4 px-1">
-        <h3 class="text-base font-bold text-slate-800">Select a Study Deck</h3>
-        <span class="text-xs font-medium text-slate-500">Tap a deck to enter focused study mode</span>
+        <h3 class="text-base font-extrabold text-slate-800">Study Decks</h3>
+        <span class="text-xs font-medium text-slate-500">Select a deck to begin focused recall</span>
       </div>
 
+      <!-- 4 Topic Decks (+ 5th Custom OCR Deck when created) -->
       <section id="decks-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
         <!-- Populated dynamically via JS -->
       </section>
     </main>
 
     <!-- =====================================================================
-         VIEW 2: ACTIVE DECK & INTERACTIVE LAB MODE
+         VIEW 2: ACTIVE DECK & INTERACTIVE LAB SANDBOX VIEW
          ===================================================================== -->
     <main id="view-deck" class="hidden">
-      <!-- Deck Top Bar -->
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-5 bg-white/90 backdrop-blur-md px-4 py-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
+      <!-- Top Deck Navigation Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5 bg-white/95 backdrop-blur-md px-4 py-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
         <button onclick="goHome()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm transition active:scale-95">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
           <span>All Decks</span>
@@ -96,11 +257,11 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <span id="card-counter" class="font-mono text-sm font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl">1 / 5</span>
+          <span id="card-counter" class="font-mono text-sm font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl">1 / 4</span>
         </div>
       </div>
 
-      <!-- Segmented Tab Switcher (Flashcard vs Interactive Sandbox if available) -->
+      <!-- Segmented Mode Switcher (Flashcard vs Interactive Experiment Sandbox) -->
       <div id="mode-tabs-wrapper" class="hidden justify-center mb-5">
         <div class="inline-flex p-1.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
           <button id="tab-btn-card" onclick="switchCardMode('card')" class="px-4 py-2 rounded-xl text-sm font-bold transition bg-indigo-600 text-white shadow-xs">
@@ -113,8 +274,8 @@
         </div>
       </div>
 
-      <!-- Mode A: 3D Flip Flashcard Container -->
-      <div id="flashcard-stage" class="perspective-container max-w-3xl mx-auto mb-6">
+      <!-- Mode A: 3D Flip Flashcard Stage -->
+      <div id="flashcard-stage" class="perspective-stage max-w-3xl mx-auto mb-6">
         <div id="flashcard-inner" class="card-3d-inner">
           <!-- FRONT FACE -->
           <div id="card-front" class="card-face p-6 sm:p-9 flex flex-col justify-between min-h-[380px] sm:min-h-[420px]">
@@ -130,12 +291,12 @@
                 Question goes here
               </h3>
 
-              <!-- Optional Visual SVG / Formula Diagram on Front -->
+              <!-- Optional Visual SVG / Diagram on Front -->
               <div id="front-visual" class="my-4"></div>
             </div>
 
             <div class="pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-              <span class="text-xs text-slate-400 font-medium">Tap card or press <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-600 font-mono">Space</kbd> to flip</span>
+              <span class="text-xs text-slate-400 font-medium">Swipe or press <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-600 font-mono">Space</kbd> to flip</span>
               <button onclick="flipCard()" class="px-5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-sm transition flex items-center gap-2">
                 <span>Flip to Answer</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -147,7 +308,7 @@
           <div id="card-back" class="card-face card-back p-6 sm:p-9 flex flex-col justify-between min-h-[380px] sm:min-h-[420px] bg-gradient-to-b from-white to-slate-50/70">
             <div>
               <div class="flex items-center justify-between gap-2 mb-4">
-                <span class="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-warmPeach text-amber-900">Explanation & Mechanism</span>
+                <span class="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-warmPeach text-amber-900">Explanation &amp; Mechanism</span>
                 <button onclick="flipCard()" class="text-xs font-bold text-indigo-600 hover:underline">Show Front ↺</button>
               </div>
 
@@ -155,7 +316,7 @@
                 <!-- Rich answer content -->
               </div>
 
-              <!-- Optional Memory Hook / Exam Tip -->
+              <!-- Optional Memory Hook -->
               <div id="back-tip-box" class="mt-5 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-100 text-sm text-indigo-950">
                 <span class="font-bold text-indigo-700 block mb-0.5">⚡ Quick Memory Hook:</span>
                 <span id="back-tip-text"></span>
@@ -192,8 +353,8 @@
         </div>
       </div>
 
-      <!-- Bottom Spaced-Repetition & Navigation Controls -->
-      <div class="max-w-3xl mx-auto flex flex-wrap items-center justify-between gap-3 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+      <!-- Bottom Spaced-Repetition & Navigation Bar -->
+      <div class="max-w-3xl mx-auto flex flex-wrap items-center justify-between gap-3 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-slate-200/80 shadow-sm">
         <button onclick="prevCard()" class="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold text-sm flex items-center gap-1.5 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
           <span>Prev</span>
@@ -224,34 +385,34 @@
   </div>
 
   <!-- =====================================================================
-       MODAL: UNIVERSAL FILE UPLOAD + OCR + SMART FLASHCARD GENERATOR
+       MODAL: UNIVERSAL FILE UPLOAD + BROWSER OCR + FLASHCARD GENERATOR
        ===================================================================== -->
   <div id="notes-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-auto animate-[slideInRight_0.25s_ease-out]">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-auto">
       <div class="flex items-center justify-between mb-4">
         <div>
           <div class="flex items-center gap-2">
             <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-softLilac text-purple-900">OCR + Multi-Format Parser</span>
-            <span class="text-xs font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">100% Browser-Side</span>
+            <span class="text-xs font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">100% Client-Side</span>
           </div>
-          <h3 class="text-xl font-extrabold text-slate-900 mt-1">Upload Notes (Any Format) or Paste Text</h3>
+          <h3 class="text-xl font-extrabold text-slate-900 mt-1">Drop Your Own Notes (Image, PDF, DOCX, TXT)</h3>
         </div>
         <button onclick="closeNotesModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold">✕</button>
       </div>
 
-      <!-- Universal Drag & Drop / File Upload Zone -->
+      <!-- Universal Drag & Drop / File Picker Zone -->
       <div id="drop-zone" onclick="document.getElementById('note-file-input').click()" class="mb-4 border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/40 hover:bg-indigo-50/80 rounded-2xl p-5 text-center cursor-pointer transition">
-        <input type="file" id="note-file-input" class="hidden" accept="*/*" onchange="handleFileUpload(event)" />
+        <input type="file" id="note-file-input" class="hidden" accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,.txt,.md,.csv,image/*,application/pdf" onchange="handleFileUpload(event)" />
         <div class="w-11 h-11 rounded-2xl bg-white text-indigo-600 shadow-xs border border-indigo-100 flex items-center justify-center mx-auto mb-2.5">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
         </div>
-        <p class="text-sm font-extrabold text-slate-900">Tap to Upload or Drag & Drop Any Study File</p>
+        <p class="text-sm font-extrabold text-slate-900">Tap to Upload or Drag &amp; Drop Any Study File</p>
         <p class="text-xs text-slate-500 mt-1">
-          Supports <strong>Images (PNG, JPG, WEBP)</strong> via OCR, <strong>PDFs</strong> (Text + Scanned OCR), <strong>Word (.docx)</strong>, and <strong>Text/Markdown/CSV</strong>
+          Supports <strong>Photos/Screenshots (.png, .jpg, .webp)</strong> via Tesseract OCR, <strong>PDFs (.pdf)</strong> with automatic scanned-page OCR fallback, <strong>Word (.docx)</strong>, and <strong>.txt / .md / .csv</strong>
         </p>
       </div>
 
-      <!-- Image Preview & Live OCR Progress Status Bar -->
+      <!-- Live OCR Progress & Thumbnail Preview Box -->
       <div id="ocr-status-box" class="hidden mb-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
         <div class="flex items-center gap-3">
           <img id="ocr-image-preview" class="hidden w-14 h-14 object-cover rounded-xl border border-slate-300 shrink-0" alt="Uploaded note preview" />
@@ -267,16 +428,16 @@
         </div>
       </div>
 
-      <!-- Deck Selection & Max Cards Controls -->
+      <!-- Target Deck & Card Limit Controls -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         <div class="sm:col-span-2">
           <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Target Study Deck</label>
           <select id="custom-target-deck" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="custom">✨ My Uploaded & OCR Notes Deck</option>
-            <option value="deck1">Deck 01: Classification & IUPAC Nomenclature</option>
-            <option value="deck2">Deck 02: Structure & Physical Properties</option>
+            <option value="custom">✨ My Uploaded &amp; OCR Notes Deck</option>
+            <option value="deck1">Deck 01: Classification &amp; IUPAC Nomenclature</option>
+            <option value="deck2">Deck 02: Structure &amp; Physical Properties</option>
             <option value="deck3">Deck 03: Preparation Lab</option>
-            <option value="deck4">Deck 04: Acidity & Chemical Reactions</option>
+            <option value="deck4">Deck 04: Acidity &amp; Chemical Reactions</option>
           </select>
         </div>
         <div>
@@ -296,11 +457,11 @@
           <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Extracted Text (Review / Edit Before Generating)</label>
           <button onclick="fillSampleNotes()" class="text-xs font-bold text-indigo-600 hover:underline">Insert Sample Unit 11 Notes</button>
         </div>
-        <textarea id="custom-notes-input" rows="5" placeholder="Upload a file above to extract text automatically, or paste notes directly here...&#10;&#10;Smart detection supports:&#10;• Reactions: CH3CH2OH + Na -> CH3CH2ONa + 1/2 H2&#10;• Definitions: Lucas Reagent - Conc. HCl + anhydrous ZnCl2&#10;• Q&A pairs or textbook paragraphs" class="w-full rounded-2xl border border-slate-300 p-3.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans leading-relaxed"></textarea>
+        <textarea id="custom-notes-input" rows="5" placeholder="Upload a file above for automatic OCR extraction, or paste raw notes directly here...&#10;&#10;Smart parser supports:&#10;• Reactions: CH3CH2OH + Na -> CH3CH2ONa + 1/2 H2&#10;• Definitions: Lucas Reagent - Conc. HCl + anhydrous ZnCl2&#10;• Q: ... / A: ... pairs or paragraphs" class="w-full rounded-2xl border border-slate-300 p-3.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans leading-relaxed"></textarea>
       </div>
 
       <div class="flex items-center justify-between gap-3">
-        <button onclick="document.getElementById('custom-notes-input').value=''; hideOcrStatus();" class="text-xs font-bold text-slate-500 hover:text-slate-800">Clear Text</button>
+        <button onclick="clearNotesModalText()" class="text-xs font-bold text-slate-500 hover:text-slate-800">Clear Text</button>
         <div class="flex items-center gap-2.5">
           <button onclick="closeNotesModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">Cancel</button>
           <button onclick="generateCustomCards()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition">
@@ -312,11 +473,11 @@
   </div>
 
   <!-- =====================================================================
-       APPLICATION DATA & LOGIC
+       APPLICATION JAVASCRIPT (CLEAN, SINGLE SCRIPT BLOCK)
        ===================================================================== -->
   <script>
     /* -----------------------------------------------------------------------
-       1. SVG CHEMICAL STRUCTURE HELPERS (CRISP & ACCURATE)
+       1. SVG CHEMICAL DIAGRAMS
        ----------------------------------------------------------------------- */
     const SVG_STRUCTURES = {
       classification: `
@@ -412,7 +573,7 @@
       resonance: `
         <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 text-center">
           <div class="text-xs font-bold text-amber-900 mb-1">Phenoxide Ion Resonance Stabilization (Structures I – V)</div>
-          <p class="text-xs text-slate-700">Negative charge delocalizes across <strong>ortho</strong> and <strong>para</strong> carbons of the benzene ring, with <em>no charge separation</em>—making phenoxide far more stable than phenol or alkoxide (R–O<sup>−</sup>).</p>
+          <p class="text-xs text-slate-700">Negative charge delocalizes across <strong>ortho</strong> and <strong>para</strong> carbons of the benzene ring with <em>no charge separation</em>—making phenoxide far more stable than phenol or alkoxide (R–O<sup>−</sup>).</p>
         </div>
       `
     };
@@ -683,13 +844,15 @@
       activeDeckId: null,
       activeCardIdx: 0,
       isFlipped: false,
-      currentMode: 'card', // 'card' | 'sandbox'
+      currentMode: 'card'
     };
 
     function loadState() {
       try {
         const savedMastered = localStorage.getItem('unit11_mastered_ids');
-        if (savedMastered) appState.masteredIds = JSON.parse(savedMastered);
+        if (savedMastered) {
+          appState.masteredIds = JSON.parse(savedMastered);
+        }
 
         const savedCustomCards = localStorage.getItem('unit11_custom_cards');
         if (savedCustomCards) {
@@ -700,7 +863,9 @@
           if (parsed.injectedByDeck) {
             Object.entries(parsed.injectedByDeck).forEach(([deckId, cards]) => {
               const target = appState.decks.find(d => d.id === deckId);
-              if (target) target.cards.push(...cards);
+              if (target && Array.isArray(cards)) {
+                target.cards.push(...cards);
+              }
             });
           }
         }
@@ -720,9 +885,9 @@
       if (!customDeck) {
         customDeck = {
           id: 'custom',
-          number: 'Custom Deck',
-          title: 'My Uploaded Study Notes',
-          subtitle: 'Auto-generated flashcards from your pasted notes & PDF excerpts',
+          number: 'Deck 05 &bull; Custom',
+          title: 'My Uploaded & OCR Notes',
+          subtitle: 'Auto-generated flashcards from your uploaded images, PDFs, DOCX & text notes',
           badgeBg: 'bg-indigo-100',
           badgeText: 'text-indigo-900',
           accentColor: '#4F46E5',
@@ -736,7 +901,7 @@
     /* -----------------------------------------------------------------------
        4. TOAST FEEDBACK HELPER
        ----------------------------------------------------------------------- */
-    let toastTimeout;
+    let toastTimeout = null;
     function showToast(msg, dotColor = 'bg-emerald-400') {
       const banner = document.getElementById('toast-banner');
       const messageEl = document.getElementById('toast-message');
@@ -747,7 +912,7 @@
       toastTimeout = setTimeout(() => {
         banner.classList.add('opacity-0', 'translate-y-4');
         banner.classList.remove('opacity-100', 'translate-y-0');
-      }, 2400);
+      }, 2500);
     }
 
     /* -----------------------------------------------------------------------
@@ -766,7 +931,6 @@
         totalCards += deckTotal;
         totalMastered += deckMastered;
         const pct = deckTotal > 0 ? Math.round((deckMastered / deckTotal) * 100) : 0;
-
         const hasSandbox = deck.cards.some(c => Boolean(c.sandboxType));
 
         const cardEl = document.createElement('div');
@@ -784,7 +948,7 @@
                 <span class="text-xs font-mono font-bold text-slate-500">${deckTotal} Cards</span>
               </div>
             </div>
-            <h4 class="text-xl font-extrabold text-slate-900 mb-1.5 group-hover:text-indigo-600 transition">${deck.title}</h4>
+            <h4 class="text-xl font-extrabold text-slate-900 mb-1.5">${deck.title}</h4>
             <p class="text-sm text-slate-600 leading-relaxed mb-5">${deck.subtitle}</p>
           </div>
 
@@ -804,7 +968,7 @@
           const rect = cardEl.getBoundingClientRect();
           const x = (e.clientX - rect.left) / rect.width - 0.5;
           const y = (e.clientY - rect.top) / rect.height - 0.5;
-          cardEl.style.transform = `perspective(1000px) rotateX(${(-y * 7).toFixed(2)}deg) rotateY(${(x * 7).toFixed(2)}deg) translateY(-4px)`;
+          cardEl.style.transform = `perspective(1000px) rotateX(${(-y * 6.5).toFixed(2)}deg) rotateY(${(x * 6.5).toFixed(2)}deg) translateY(-4px)`;
         });
         cardEl.addEventListener('mouseleave', () => {
           cardEl.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
@@ -836,7 +1000,7 @@
     }
 
     /* -----------------------------------------------------------------------
-       6. VIEW 2: ACTIVE DECK, CARD FLIP, NAVIGATION & SWIPE PHYSICS
+       6. VIEW 2: ACTIVE DECK, 3D CARD FLIP & NAVIGATION
        ----------------------------------------------------------------------- */
     function openDeck(deckId) {
       const deck = appState.decks.find(d => d.id === deckId);
@@ -852,7 +1016,7 @@
 
       const badge = document.getElementById('active-deck-badge');
       badge.className = `text-xs font-extrabold uppercase tracking-wider px-3 py-0.5 rounded-full ${deck.badgeBg} ${deck.badgeText}`;
-      badge.textContent = deck.number;
+      badge.innerHTML = deck.number;
       document.getElementById('active-deck-title').textContent = deck.title;
 
       renderActiveCard();
@@ -867,22 +1031,19 @@
       const card = deck.cards[appState.activeCardIdx];
       const isMastered = appState.masteredIds.includes(card.id);
 
-      // Update Counter
       document.getElementById('card-counter').textContent = `${appState.activeCardIdx + 1} / ${deck.cards.length}`;
 
-      // Reset Flip State
       appState.isFlipped = false;
       const inner = document.getElementById('flashcard-inner');
       inner.classList.remove('is-flipped');
 
-      // Directional Slide Animation
       const stage = document.getElementById('flashcard-stage');
-      stage.classList.remove('anim-slide-right', 'anim-slide-left');
+      stage.classList.remove('anim-next', 'anim-prev');
       void stage.offsetWidth;
-      if (animDirection === 'next') stage.classList.add('anim-slide-right');
-      if (animDirection === 'prev') stage.classList.add('anim-slide-left');
+      if (animDirection === 'next') stage.classList.add('anim-next');
+      if (animDirection === 'prev') stage.classList.add('anim-prev');
 
-      // Populate Front
+      // Front Face
       document.getElementById('front-tag').textContent = card.tag || 'Concept';
       document.getElementById('front-question').innerHTML = card.question;
       document.getElementById('front-visual').innerHTML = card.visual || '';
@@ -896,7 +1057,7 @@
         masteredPill.classList.remove('inline-flex');
       }
 
-      // Populate Back
+      // Back Face
       document.getElementById('back-answer').innerHTML = card.answer;
       const tipBox = document.getElementById('back-tip-box');
       if (card.tip) {
@@ -906,7 +1067,7 @@
         tipBox.classList.add('hidden');
       }
 
-      // Sandbox Tab Controls
+      // Interactive Sandbox Tab
       const modeTabs = document.getElementById('mode-tabs-wrapper');
       const openSandboxBackBtn = document.getElementById('open-sandbox-from-back');
       if (card.sandboxType) {
@@ -922,14 +1083,12 @@
         openSandboxBackBtn.classList.remove('inline-flex');
       }
 
-      // Default to Flashcard view
       switchCardMode('card', false);
     }
 
     function flipCard() {
       appState.isFlipped = !appState.isFlipped;
-      const inner = document.getElementById('flashcard-inner');
-      inner.classList.toggle('is-flipped', appState.isFlipped);
+      document.getElementById('flashcard-inner').classList.toggle('is-flipped', appState.isFlipped);
     }
 
     function nextCard() {
@@ -994,7 +1153,7 @@
     }
 
     /* -----------------------------------------------------------------------
-       7. INTERACTIVE SANDBOXES (5 FULL CHEMISTRY EXPERIMENTS)
+       7. INTERACTIVE SANDBOXES (ALL 6 CHEMISTRY MINI-EXPERIMENTS)
        ----------------------------------------------------------------------- */
     function buildSandbox(type) {
       const titleEl = document.getElementById('sandbox-title');
@@ -1005,15 +1164,15 @@
         titleEl.textContent = '3D Ball-and-Stick Functional Group Geometry';
         container.innerHTML = `
           <div class="flex flex-wrap gap-2 mb-4">
-            <button onclick="selectMolecule3D('methanol')" id="mol-btn-methanol" class="mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white transition">Methanol (CH₃OH)</button>
-            <button onclick="selectMolecule3D('phenol')" id="mol-btn-phenol" class="mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Phenol (C₆H₅OH)</button>
-            <button onclick="selectMolecule3D('ether')" id="mol-btn-ether" class="mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Methoxymethane (CH₃OCH₃)</button>
+            <button onclick="selectMolecule3D('methanol')" id="mol-btn-methanol" class="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white transition">Methanol (CH₃OH)</button>
+            <button onclick="selectMolecule3D('phenol')" id="mol-btn-phenol" class="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Phenol (C₆H₅OH)</button>
+            <button onclick="selectMolecule3D('ether')" id="mol-btn-ether" class="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Methoxymethane (CH₃OCH₃)</button>
           </div>
           <div id="molecule-3d-viewport" class="mb-4 border border-slate-200">
-            <div class="absolute top-3 left-3 z-10 bg-white/85 backdrop-blur-xs px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 shadow-xs">
+            <div class="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 shadow-xs">
               🖱️ Drag or swipe to rotate in 3D
             </div>
-            <div class="absolute bottom-3 right-3 z-10 flex items-center gap-2 bg-white/85 backdrop-blur-xs px-3 py-1 rounded-xl text-[11px] font-mono text-slate-600">
+            <div class="absolute bottom-3 right-3 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-xs px-3 py-1 rounded-xl text-[11px] font-mono text-slate-600">
               <span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-800"></span>C
               <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500"></span>O
               <span class="inline-block w-2.5 h-2.5 rounded-full bg-sky-300 border border-slate-400"></span>H
@@ -1028,7 +1187,7 @@
       else if (type === 'boilingPoint') {
         titleEl.textContent = 'Intermolecular H-Bonding & Boiling Point Explorer';
         container.innerHTML = `
-          <p class="text-sm text-slate-600 mb-4">Slide or tap a compound of comparable molecular mass (~44–46 u) to inspect its intermolecular forces and boiling point:</p>
+          <p class="text-sm text-slate-600 mb-4">Tap a compound of comparable molecular mass (~44–46 u) to inspect its intermolecular forces and boiling point:</p>
           <div class="grid grid-cols-3 gap-2.5 mb-5">
             <button onclick="setBPCompound(0)" id="bp-btn-0" class="p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50 text-center transition">
               <div class="font-bold text-slate-900 text-sm">Propane</div>
@@ -1109,7 +1268,7 @@
           <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-3">
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Your Ranking (Strongest → Weakest)</span>
-              <button onclick="resetPkaChallenge()" class="text-xs font-bold text-indigo-600 hover:underline">Reset Order</button>
+              <button onclick="initPkaChallenge()" class="text-xs font-bold text-indigo-600 hover:underline">Reset Order</button>
             </div>
             <div id="pka-ranked-list" class="flex flex-wrap gap-2 min-h-[44px] items-center"></div>
           </div>
@@ -1119,7 +1278,6 @@
       }
     }
 
-    /* --- Sandbox 1: Boiling Point Visualizer --- */
     function setBPCompound(idx) {
       [0, 1, 2].forEach(i => {
         const btn = document.getElementById(`bp-btn-${i}`);
@@ -1133,7 +1291,6 @@
       const data = [
         {
           name: 'Propane (CH₃CH₂CH₃)',
-          mass: '44 u',
           bp: '231 K (-42 °C)',
           barPct: 35,
           barColor: 'bg-slate-400',
@@ -1142,7 +1299,6 @@
         },
         {
           name: 'Methoxymethane (CH₃OCH₃)',
-          mass: '46 u',
           bp: '248 K (-25 °C)',
           barPct: 50,
           barColor: 'bg-amber-400',
@@ -1151,7 +1307,6 @@
         },
         {
           name: 'Ethanol (CH₃CH₂OH)',
-          mass: '46 u',
           bp: '351 K (+78 °C)',
           barPct: 95,
           barColor: 'bg-emerald-500',
@@ -1173,7 +1328,6 @@
       `;
     }
 
-    /* --- Sandbox 2: Alkene Hydration vs Hydroboration --- */
     function setAlkenePath(mode) {
       const btnH = document.getElementById('alk-btn-hydration');
       const btnB = document.getElementById('alk-btn-hydroboration');
@@ -1209,7 +1363,6 @@
       }
     }
 
-    /* --- Sandbox 3: Grignard Builder --- */
     function runGrignard(type) {
       ['methanal', 'ethanal', 'propanone'].forEach(k => {
         const btn = document.getElementById(`grig-btn-${k}`);
@@ -1264,7 +1417,6 @@
       `;
     }
 
-    /* --- Sandbox 4: Phenol Synthesis Simulator --- */
     function runPhenolRoute(idx) {
       [0, 1, 2, 3].forEach(i => {
         const btn = document.getElementById(`ph-btn-${i}`);
@@ -1307,7 +1459,6 @@
       `;
     }
 
-    /* --- Sandbox 5: Acidity & pKa Sorter Mini-Game --- */
     const PKA_ITEMS = [
       { id: 'p-nitro', name: 'p-Nitrophenol', pka: 7.1, rank: 1 },
       { id: 'o-nitro', name: 'o-Nitrophenol', pka: 7.2, rank: 2 },
@@ -1332,10 +1483,6 @@
         poolEl.appendChild(btn);
       });
       renderPkaRanked();
-    }
-
-    function resetPkaChallenge() {
-      initPkaChallenge();
     }
 
     function pickPkaItem(item) {
@@ -1370,20 +1517,28 @@
         if (isCorrect) {
           fbEl.innerHTML = `<div class="p-3.5 rounded-xl bg-emerald-100 text-emerald-900">🎉 Spot on! Strongest acid has the lowest pK<sub>a</sub>: p-Nitrophenol (7.1) &gt; o-Nitrophenol (7.2) &gt; m-Nitrophenol (8.3) &gt; Phenol (10.0) &gt; p-Cresol (10.2) &gt; Ethanol (15.9).</div>`;
         } else {
-          fbEl.innerHTML = `<div class="p-3.5 rounded-xl bg-amber-100 text-amber-900">Not quite! Remember: <strong>p-Nitrophenol (7.1)</strong> is slightly stronger than <strong>o-Nitrophenol (7.2)</strong> due to intramolecular H-bonding in o-nitrophenol, followed by <strong>m-Nitrophenol (8.3)</strong>, <strong>Phenol (10.0)</strong>, <strong>p-Cresol (10.2)</strong>, and <strong>Ethanol (15.9)</strong>.</div>`;
+          fbEl.innerHTML = `<div class="p-3.5 rounded-xl bg-amber-100 text-amber-900">Close! Remember: <strong>p-Nitrophenol (7.1)</strong> is slightly stronger than <strong>o-Nitrophenol (7.2)</strong> due to intramolecular H-bonding in o-nitrophenol, followed by <strong>m-Nitrophenol (8.3)</strong>, <strong>Phenol (10.0)</strong>, <strong>p-Cresol (10.2)</strong>, and <strong>Ethanol (15.9)</strong>.</div>`;
         }
       }
     }
 
     /* -----------------------------------------------------------------------
-       8. THREE.JS 3D INTERACTIVE MOLECULE VIEWER (SANDBOX)
+       8. THREE.JS 3D MOLECULE VIEWER
        ----------------------------------------------------------------------- */
-    let molScene, molCamera, molRenderer, molGroup, molAnimId;
-    let isDraggingMol = false, prevMouse = { x: 0, y: 0 }, rotVel = { x: 0.005, y: 0.01 };
+    let molScene = null;
+    let molCamera = null;
+    let molRenderer = null;
+    let molGroup = null;
+    let molAnimId = null;
+    let isDraggingMol = false;
+    let prevMouse = { x: 0, y: 0 };
+    let rotVel = { x: 0.005, y: 0.01 };
 
     function cleanupThreeMolecule() {
-      if (molAnimId) cancelAnimationFrame(molAnimId);
-      molAnimId = null;
+      if (molAnimId) {
+        cancelAnimationFrame(molAnimId);
+        molAnimId = null;
+      }
       if (molRenderer) {
         molRenderer.dispose();
         molRenderer = null;
@@ -1395,8 +1550,8 @@
         const btn = document.getElementById(`mol-btn-${k}`);
         if (btn) {
           btn.className = k === type
-            ? 'mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white transition'
-            : 'mol-sel-btn px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+            ? 'px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white transition'
+            : 'px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
         }
       });
 
@@ -1412,12 +1567,11 @@
       if (!container || typeof THREE === 'undefined') return;
 
       cleanupThreeMolecule();
-      // Remove any old canvas
       const oldCanvas = container.querySelector('canvas');
       if (oldCanvas) oldCanvas.remove();
 
       const w = container.clientWidth || 600;
-      const h = container.clientHeight || 290;
+      const h = container.clientHeight || 300;
 
       molScene = new THREE.Scene();
       molCamera = new THREE.PerspectiveCamera(42, w / h, 0.1, 100);
@@ -1428,9 +1582,7 @@
       molRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.appendChild(molRenderer.domElement);
 
-      // Lighting
-      const ambient = new THREE.AmbientLight(0xffffff, 0.75);
-      molScene.add(ambient);
+      molScene.add(new THREE.AmbientLight(0xffffff, 0.78));
       const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
       dirLight.position.set(5, 7, 6);
       molScene.add(dirLight);
@@ -1438,22 +1590,21 @@
       molGroup = new THREE.Group();
       molScene.add(molGroup);
 
-      // Materials
       const matC = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.1 });
       const matO = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.3, metalness: 0.1 });
       const matH = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, roughness: 0.25 });
-      const matLP = new THREE.MeshStandardMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.65, roughness: 0.2 });
+      const matLP = new THREE.MeshStandardMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.68, roughness: 0.2 });
       const matBond = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 });
 
       function addAtom(pos, radius, mat) {
         const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 24, 24), mat);
-        mesh.position.set(...pos);
+        mesh.position.set(pos[0], pos[1], pos[2]);
         molGroup.add(mesh);
       }
 
       function addBond(p1, p2, doubleBond = false) {
-        const v1 = new THREE.Vector3(...p1);
-        const v2 = new THREE.Vector3(...p2);
+        const v1 = new THREE.Vector3(p1[0], p1[1], p1[2]);
+        const v2 = new THREE.Vector3(p2[0], p2[1], p2[2]);
         const dir = new THREE.Vector3().subVectors(v2, v1);
         const len = dir.length();
         const mid = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
@@ -1484,14 +1635,11 @@
         addBond(posO, posC);
         addBond(posO, posHO);
 
-        // 3 Methyl H atoms
-        const hCoords = [[-1.3, 0.85, 0.4], [-1.3, -0.9, 0.55], [-0.85, -0.25, -1.05]];
-        hCoords.forEach(hc => {
+        [[-1.3, 0.85, 0.4], [-1.3, -0.9, 0.55], [-0.85, -0.25, -1.05]].forEach(hc => {
           addAtom(hc, 0.27, matH);
           addBond(posC, hc);
         });
 
-        // 2 Oxygen Lone Pairs
         addAtom([0.75, 0.95, 0.65], 0.2, matLP);
         addAtom([0.75, 0.95, -0.65], 0.2, matLP);
       } else if (type === 'ether') {
@@ -1504,7 +1652,6 @@
         addBond(posO, posC1);
         addBond(posO, posC2);
 
-        // Methyl Hydrogens
         [[-1.95, 0.45, 0.3], [-1.25, -1.15, 0.6], [-1.25, -0.5, -0.95]].forEach(hc => {
           addAtom(hc, 0.26, matH);
           addBond(posC1, hc);
@@ -1514,11 +1661,9 @@
           addBond(posC2, hc);
         });
 
-        // Lone pairs
         addAtom([0, 1.15, 0.62], 0.19, matLP);
         addAtom([0, 1.15, -0.62], 0.19, matLP);
       } else if (type === 'phenol') {
-        // Hexagon Benzene Ring
         const r = 1.25;
         const ringPts = [];
         for (let i = 0; i < 6; i++) {
@@ -1535,7 +1680,6 @@
             addBond(pt, hPt);
           }
         });
-        // -OH attached at index 0 (rightmost carbon)
         const c0 = ringPts[0];
         const posO = [c0[0] + 1.15, c0[1], 0];
         const posH = [posO[0] + 0.55, posO[1] + 0.72, 0];
@@ -1546,7 +1690,6 @@
         addAtom([posO[0], posO[1] - 0.55, 0.55], 0.18, matLP);
       }
 
-      // Pointer & Touch Rotation with Momentum Damping
       const domEl = molRenderer.domElement;
       const startDrag = (x, y) => { isDraggingMol = true; prevMouse = { x, y }; };
       const moveDrag = (x, y) => {
@@ -1574,7 +1717,7 @@
           molGroup.rotation.y += rotVel.y;
           molGroup.rotation.x += rotVel.x;
           rotVel.x *= 0.94;
-          rotVel.y = rotVel.y * 0.94 + 0.004 * 0.06; // subtle idle spin
+          rotVel.y = rotVel.y * 0.94 + 0.004 * 0.06;
         }
         if (molRenderer && molScene && molCamera) {
           molRenderer.render(molScene, molCamera);
@@ -1584,7 +1727,7 @@
     }
 
     /* -----------------------------------------------------------------------
-       9. AMBIENT HERO 3D FLOATING MOLECULES (THREE.JS BACKGROUND)
+       9. AMBIENT FLOATING MOLECULES CANVAS (BACKGROUND)
        ----------------------------------------------------------------------- */
     function initAmbientScene() {
       const canvas = document.getElementById('ambient-canvas');
@@ -1617,7 +1760,6 @@
         const core = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 16), matMain);
         g.add(core);
 
-        // Two bonded satellite atoms (water/alcohol/ether motif)
         const sat1 = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), matMain);
         sat1.position.set(0.85, 0.45, 0);
         const sat2 = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), matMain);
@@ -1661,127 +1803,13 @@
     }
 
     /* -----------------------------------------------------------------------
-       10. DROP YOUR OWN NOTES (AUTO-PARSER INTO FLASHCARDS)
-       ----------------------------------------------------------------------- */
-    function openNotesModal() {
-      const modal = document.getElementById('notes-modal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeNotesModal() {
-      const modal = document.getElementById('notes-modal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-
-    function fillSampleNotes() {
-      document.getElementById('custom-notes-input').value =
-`Lucas Reagent - A mixture of concentrated HCl and anhydrous ZnCl2 used to distinguish 1°, 2°, and 3° alcohols based on turbidity speed.
-Q: Why do ethers have much lower boiling points than isomeric alcohols?
-A: Ethers lack an O–H bond and cannot form intermolecular hydrogen bonds, whereas alcohols form strong O–H···O hydrogen bond networks.
-Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with sodium alkoxide (R–ONa) via SN2 mechanism to yield symmetrical or unsymmetrical ethers.`;
-    }
-
-    function generateCustomCards() {
-      const raw = document.getElementById('custom-notes-input').value.trim();
-      const targetDeckId = document.getElementById('custom-target-deck').value;
-      if (!raw) {
-        showToast('Please paste some notes first!', 'bg-amber-400');
-        return;
-      }
-
-      const newCards = parseNotesToCards(raw);
-      if (newCards.length === 0) {
-        showToast('Could not detect cards. Try "Term - Definition" format.', 'bg-amber-400');
-        return;
-      }
-
-      const targetDeck = targetDeckId === 'custom'
-        ? ensureCustomDeck()
-        : appState.decks.find(d => d.id === targetDeckId);
-
-      targetDeck.cards.push(...newCards);
-
-      // Save to localStorage
-      try {
-        const existing = JSON.parse(localStorage.getItem('unit11_custom_cards') || '{"customDeckCards":[],"injectedByDeck":{}}');
-        if (targetDeck.id === 'custom') {
-          existing.customDeckCards.push(...newCards);
-        } else {
-          existing.injectedByDeck[targetDeck.id] = (existing.injectedByDeck[targetDeck.id] || []).concat(newCards);
-        }
-        localStorage.setItem('unit11_custom_cards', JSON.stringify(existing));
-      } catch (e) {}
-
-      document.getElementById('custom-notes-input').value = '';
-      closeNotesModal();
-      renderHub();
-      showToast(`Created ${newCards.length} interactive flashcard(s)!`, 'bg-emerald-400');
-      openDeck(targetDeck.id);
-    }
-
-    function parseNotesToCards(text) {
-      const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
-      const cards = [];
-      let i = 0;
-
-      while (i < lines.length) {
-        const line = lines[i];
-        // Pattern 1: Q: ... followed by A: ...
-        if (/^Q[:.\-]\s*/i.test(line) && i + 1 < lines.length && /^A[:.\-]\s*/i.test(lines[i + 1])) {
-          const q = line.replace(/^Q[:.\-]\s*/i, '');
-          const a = lines[i + 1].replace(/^A[:.\-]\s*/i, '');
-          cards.push({
-            id: `custom-${Date.now()}-${cards.length}`,
-            tag: 'Custom Q&A',
-            question: q,
-            answer: `<p>${a}</p>`,
-            tip: 'Auto-generated from your custom study notes.'
-          });
-          i += 2;
-          continue;
-        }
-
-        // Pattern 2: Term - Definition or Term : Definition
-        const splitMatch = line.match(/^([^:\-–]{3,70})\s*(?:[:\-–])\s*(.+)$/);
-        if (splitMatch) {
-          cards.push({
-            id: `custom-${Date.now()}-${cards.length}`,
-            tag: 'Custom Concept',
-            question: `Explain: ${splitMatch[1].trim()}`,
-            answer: `<p><strong>${splitMatch[1].trim()}:</strong> ${splitMatch[2].trim()}</p>`,
-            tip: 'Auto-generated from your custom study notes.'
-          });
-          i += 1;
-          continue;
-        }
-
-        // Pattern 3: Standalone paragraph / statement
-        const words = line.split(' ');
-        const headline = words.slice(0, 6).join(' ') + (words.length > 6 ? '...' : '');
-        cards.push({
-          id: `custom-${Date.now()}-${cards.length}`,
-          tag: 'Note Snippet',
-          question: `Key Concept Check: "${headline}"`,
-          answer: `<p>${line}</p>`,
-          tip: 'Auto-generated from your custom study notes.'
-        });
-        i += 1;
-      }
-      return cards;
-    }
-
-    /* -----------------------------------------------------------------------
        10. UNIVERSAL FILE UPLOAD, BROWSER OCR & SMART FLASHCARD GENERATOR
        ----------------------------------------------------------------------- */
-    // Configure PDF.js worker if loaded
     if (typeof pdfjsLib !== 'undefined') {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
 
-    // Setup Drag-and-Drop listeners on the modal drop zone
-    (function setupDropZone() {
+    function setupDropZone() {
       const dz = document.getElementById('drop-zone');
       if (!dz) return;
       ['dragenter', 'dragover'].forEach(evt => {
@@ -1799,10 +1827,12 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
         });
       });
       dz.addEventListener('drop', (e) => {
-        const files = e.dataTransfer?.files;
-        if (files && files.length > 0) processUploadedFile(files[0]);
+        const files = e.dataTransfer ? e.dataTransfer.files : null;
+        if (files && files.length > 0) {
+          processUploadedFile(files[0]);
+        }
       });
-    })();
+    }
 
     function updateOcrStatus(text, pct, imgUrl = null) {
       const box = document.getElementById('ocr-status-box');
@@ -1816,7 +1846,7 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
       statusPct.textContent = `${Math.round(pct)}%`;
       bar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
 
-      if (imgUrl) {
+      if (typeof imgUrl === 'string') {
         imgEl.src = imgUrl;
         imgEl.classList.remove('hidden');
       } else if (imgUrl === false) {
@@ -1829,10 +1859,17 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
       document.getElementById('ocr-image-preview').classList.add('hidden');
     }
 
+    function clearNotesModalText() {
+      document.getElementById('custom-notes-input').value = '';
+      hideOcrStatus();
+    }
+
     function handleFileUpload(event) {
-      const file = event.target.files?.[0];
-      if (file) processUploadedFile(file);
-      event.target.value = ''; // allow re-uploading same file
+      const file = event.target.files ? event.target.files[0] : null;
+      if (file) {
+        processUploadedFile(file);
+      }
+      event.target.value = '';
     }
 
     async function processUploadedFile(file) {
@@ -1841,42 +1878,40 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
       const textarea = document.getElementById('custom-notes-input');
 
       try {
-        // 1. IMAGE FILES -> Tesseract.js OCR
+        // 1. IMAGES (.png, .jpg, .jpeg, .webp, etc.) -> Tesseract.js v4 OCR
         if (mime.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif|tiff?)$/.test(name)) {
           const objectUrl = URL.createObjectURL(file);
-          updateOcrStatus(`Loading OCR engine for "${file.name}"...`, 8, objectUrl);
+          updateOcrStatus(`Starting OCR for "${file.name}"...`, 8, objectUrl);
 
           if (typeof Tesseract === 'undefined') {
-            throw new Error('OCR engine still loading. Check internet connection and try again.');
+            throw new Error('Tesseract OCR engine is still loading. Please retry in a moment.');
           }
 
-          const worker = await Tesseract.createWorker('eng', 1, {
+          const result = await Tesseract.recognize(file, 'eng', {
             logger: (m) => {
               if (m.status === 'recognizing text') {
                 updateOcrStatus(`OCR Scanning "${file.name}"...`, 20 + m.progress * 78);
-              } else {
+              } else if (m.status) {
                 updateOcrStatus(`OCR: ${m.status}...`, 15);
               }
             }
           });
-          const { data: { text } } = await worker.recognize(file);
-          await worker.terminate();
 
-          const cleaned = text.trim();
+          const cleaned = (result && result.data && result.data.text ? result.data.text : '').trim();
           textarea.value = textarea.value ? `${textarea.value}\n\n${cleaned}` : cleaned;
-          updateOcrStatus(`OCR Complete! Extracted ${cleaned.length} characters from image.`, 100);
+          updateOcrStatus(`OCR Complete! Extracted ${cleaned.length} characters.`, 100);
           showToast('Image text extracted via OCR!', 'bg-emerald-400');
         }
 
-        // 2. PDF FILES -> PDF.js Text Extraction + Automatic Tesseract OCR Fallback for Scanned PDFs
+        // 2. PDF (.pdf) -> PDF.js Text Extraction + Automatic Scanned-Page Tesseract OCR Fallback
         else if (mime === 'application/pdf' || name.endsWith('.pdf')) {
           if (typeof pdfjsLib === 'undefined') {
-            throw new Error('PDF parser unavailable. Please check your connection.');
+            throw new Error('PDF.js parser unavailable. Check your internet connection.');
           }
           updateOcrStatus(`Reading PDF "${file.name}"...`, 10, false);
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          const totalPages = Math.min(pdf.numPages, 12);
+          const totalPages = Math.min(pdf.numPages, 15);
           let extractedText = '';
 
           for (let p = 1; p <= totalPages; p++) {
@@ -1887,11 +1922,10 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
             extractedText += pageStrings + '\n\n';
           }
 
-          // If extracted text is very sparse (< 60 chars), treat as scanned PDF and run OCR on rendered pages
+          // Fallback to Tesseract OCR if PDF appears scanned / image-only (< 60 non-whitespace chars)
           if (extractedText.replace(/\s+/g, '').length < 60 && typeof Tesseract !== 'undefined') {
-            updateOcrStatus('Scanned PDF detected! Running OCR on pages...', 50);
+            updateOcrStatus('Scanned PDF detected! Running OCR on rendered pages...', 50);
             const ocrPages = Math.min(pdf.numPages, 5);
-            const worker = await Tesseract.createWorker('eng');
             let ocrResult = '';
 
             for (let p = 1; p <= ocrPages; p++) {
@@ -1903,10 +1937,9 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
               canvas.height = viewport.height;
               const ctx = canvas.getContext('2d');
               await page.render({ canvasContext: ctx, viewport }).promise;
-              const { data: { text } } = await worker.recognize(canvas);
-              ocrResult += text + '\n\n';
+              const res = await Tesseract.recognize(canvas, 'eng');
+              ocrResult += (res && res.data && res.data.text ? res.data.text : '') + '\n\n';
             }
-            await worker.terminate();
             extractedText = ocrResult;
           }
 
@@ -1930,7 +1963,7 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
           showToast('Word document text extracted!', 'bg-emerald-400');
         }
 
-        // 4. ANY OTHER FORMAT (.txt, .md, .csv, .rtf, .json, etc.) -> FileReader Text Fallback
+        // 4. TEXT / MARKDOWN / CSV FILES (.txt, .md, .csv, etc.)
         else {
           updateOcrStatus(`Reading file "${file.name}"...`, 50, false);
           const text = await file.text();
@@ -1941,8 +1974,8 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
         }
       } catch (err) {
         console.error(err);
-        updateOcrStatus(`Note: ${err.message || 'Could not parse file automatically.'}`, 100, false);
-        showToast('Error reading file—try pasting or another format.', 'bg-rose-500');
+        updateOcrStatus(`Error: ${err.message || 'Could not parse file.'}`, 100, false);
+        showToast('Could not read file—try another format or paste text.', 'bg-rose-500');
       }
     }
 
@@ -1964,13 +1997,17 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
 CH3CH2OH + Na -> CH3CH2ONa + 1/2 H2 (Active metal reaction releasing hydrogen gas)
 Q: Why do ethers have much lower boiling points than isomeric alcohols?
 A: Ethers lack an O–H bond and cannot form intermolecular hydrogen bonds, whereas alcohols form strong O–H···O hydrogen bond networks.
-Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with sodium alkoxide (R–ONa) via SN2 mechanism to yield symmetrical or unsymmetrical ethers.`;
+Williamson Ether Synthesis - Reaction of a primary alkyl halide with sodium alkoxide (R–ONa) via SN2 mechanism to yield symmetrical or unsymmetrical ethers.`;
+    }
+
+    function formatChemFormulas(str) {
+      return str.replace(/([A-Za-z\)])(\d+)/g, '$1<sub>$2</sub>');
     }
 
     function generateCustomCards() {
       const raw = document.getElementById('custom-notes-input').value.trim();
       const targetDeckId = document.getElementById('custom-target-deck').value;
-      const maxCards = parseInt(document.getElementById('custom-max-cards')?.value || '15', 10);
+      const maxCards = parseInt(document.getElementById('custom-max-cards').value || '15', 10);
 
       if (!raw) {
         showToast('Please upload a file or paste notes first!', 'bg-amber-400');
@@ -1989,7 +2026,6 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
 
       targetDeck.cards.push(...newCards);
 
-      // Save to localStorage
       try {
         const existing = JSON.parse(localStorage.getItem('unit11_custom_cards') || '{"customDeckCards":[],"injectedByDeck":{}}');
         if (targetDeck.id === 'custom') {
@@ -2008,15 +2044,17 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
       openDeck(targetDeck.id);
     }
 
-    function formatChemFormulas(str) {
-      // Automatically subscript numbers following chemical symbols/parentheses
-      return str.replace(/([A-Za-z\)])(\d+)/g, '$1<sub>$2</sub>');
-    }
-
     function parseNotesToCards(text, maxCards = 15) {
-      let rawChunks = text.split(/\n+/).map(l => l.replace(/^[•\-\*\d+\.]+\s*/, '').trim()).filter(l => l.length > 4);
+      let rawChunks = text
+        .split(/\n+/)
+        .map(l => l.replace(/^[•\-\*\d+\.]+\s*/, '').trim())
+        .filter(l => l.length > 4);
+
       if (rawChunks.length === 1 && rawChunks[0].length > 180) {
-        rawChunks = rawChunks[0].split(/(?<=[.?!])\s+/).map(s => s.trim()).filter(s => s.length > 12);
+        rawChunks = rawChunks[0]
+          .split(/(?<=[.?!])\s+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 12);
       }
 
       const cards = [];
@@ -2040,7 +2078,7 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
           continue;
         }
 
-        // 2. Chemical Reaction Equation Detection (contains ->, →, =>, ⇌)
+        // 2. Chemical Reaction Equation (contains ->, →, =>, ⇌)
         const rxnMatch = line.match(/^(.+?)\s*(?:->|→|=>|⇌)\s*(.+)$/);
         if (rxnMatch && rxnMatch[1].length >= 3 && rxnMatch[2].length >= 2) {
           cards.push({
@@ -2093,4 +2131,61 @@ Williamson Ether Synthesis - Reaction of an alkyl halide (preferably 1°) with s
     /* -----------------------------------------------------------------------
        11. KEYBOARD SHORTCUTS & MOBILE TOUCH SWIPE GESTURES
        ----------------------------------------------------------------------- */
-// ... existing code ... -->
+    document.addEventListener('keydown', (e) => {
+      if (!appState.activeDeckId) return;
+      const modal = document.getElementById('notes-modal');
+      if (modal && !modal.classList.contains('hidden')) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (appState.currentMode === 'card') flipCard();
+      } else if (e.code === 'ArrowRight') {
+        nextCard();
+      } else if (e.code === 'ArrowLeft') {
+        prevCard();
+      } else if (e.key === 'm' || e.key === 'M') {
+        const deck = appState.decks.find(d => d.id === appState.activeDeckId);
+        const card = deck ? deck.cards[appState.activeCardIdx] : null;
+        if (card) {
+          const currentlyMastered = appState.masteredIds.includes(card.id);
+          setMastery(!currentlyMastered);
+        }
+      }
+    });
+
+    function setupCardSwipe() {
+      const stage = document.getElementById('flashcard-stage');
+      if (!stage) return;
+      let startX = 0;
+      let startY = 0;
+
+      stage.addEventListener('touchstart', (e) => {
+        if (!e.touches[0]) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }, { passive: true });
+
+      stage.addEventListener('touchend', (e) => {
+        if (!e.changedTouches[0]) return;
+        const dx = e.changedTouches[0].clientX - startX;
+        const dy = e.changedTouches[0].clientY - startY;
+        if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+          if (dx < 0) nextCard();
+          else prevCard();
+        }
+      }, { passive: true });
+    }
+
+    /* -----------------------------------------------------------------------
+       12. INITIALIZATION ON WINDOW LOAD
+       ----------------------------------------------------------------------- */
+    window.onload = function () {
+      loadState();
+      renderHub();
+      setupDropZone();
+      setupCardSwipe();
+      initAmbientScene();
+    };
+  </script>
+</body>
+</html>
